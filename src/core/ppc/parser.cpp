@@ -5,9 +5,6 @@
 #include <stdexcept>
 #include <utility>
 
-#include "boost/endian.hpp"
-#include "boost/endian/conversion.hpp"
-#include "boost/endian/detail/endian_reverse.hpp"
 #include "common/defs.hpp"
 #include "endian.h"
 #include "ppc/ppc.hpp"
@@ -19,7 +16,6 @@ namespace PPC {
 
   InstructionInfo decode(u32 op) {
     // first establish which format is used
-    // auto c =boost::endian::big_to_native(op);
 
     spdlog::info("x: {:#010x}", be32toh(op));
     spdlog::info("be: {:#010x}", (op & 0xff) >> 2);

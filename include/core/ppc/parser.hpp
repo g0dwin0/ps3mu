@@ -1,5 +1,4 @@
 #pragma once
-#include "boost/endian/arithmetic.hpp"
 #include "common/defs.hpp"
 
 namespace PPC {
