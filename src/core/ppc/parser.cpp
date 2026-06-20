@@ -6,7 +6,9 @@
 #include <utility>
 
 #include "common/defs.hpp"
-#include "endian.h"
+// #include "endian.h
+#include <machine/endian.h>
+
 #include "ppc/ppc.hpp"
 #include "spdlog/spdlog.h"
 
@@ -16,10 +18,6 @@ namespace PPC {
 
   InstructionInfo decode(u32 op) {
     // first establish which format is used
-
-    spdlog::info("x: {:#010x}", be32toh(op));
-    spdlog::info("be: {:#010x}", (op & 0xff) >> 2);
-    spdlog::info("le: {:#010x}", (op & 0xff) >> 2);
     spdlog::info("be: {:#010x}", (op & 0xff) >> 2);
     spdlog::info("le: {:#010x}", (op & 0xff) >> 2);
 
@@ -41,7 +39,6 @@ namespace PPC {
       case InstructionFormat::DS_FORM: {
         switch (opcd) {
           case STORE_DOUBLEWORD: {
-
             if (op & 1) {
               fmt::println("stdu");
             } else {
