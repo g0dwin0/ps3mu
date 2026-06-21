@@ -1,10 +1,39 @@
 #pragma once
-#include <SDL3/SDL_audio.h>
-
-#include <queue>
+#include <array>
 
 #include "common/defs.hpp"
-#include "enums.hpp"
+
+union FPSCR {
+  struct __attribute__((packed)) {
+    u8 FX       : 1;
+    u8 FEX      : 1;
+    u8 VX       : 1;
+    u8 OX       : 1;
+    u8 UX       : 1;
+    u8 ZX       : 1;
+    u8 XX       : 1;
+    u8 VXSNAN   : 1;
+    u8 VXISI    : 1;
+    u8 VXIDI    : 1;
+    u8 VXZDZ    : 1;
+    u8 VXIMZ    : 1;
+    u8 VXVC     : 1;
+    u8 FR       : 1;
+    u8 FI       : 1;
+    u8 FPRF     : 5;
+    u8 RESERVED : 1;
+    u8 VXSOFT   : 1;
+    u8 VXSQRT   : 1;
+    u8 VXCVI    : 1;
+    u8 VE       : 1;
+    u8 OE       : 1;
+    u8 UE       : 1;
+    u8 ZE       : 1;
+    u8 XE       : 1;
+    u8 NI       : 1;
+    u8 RN       : 2;
+  };
+};
 
 struct PPE {
   std::array<u64, 32> gpr;
@@ -12,6 +41,22 @@ struct PPE {
   u64 lr;
   u64 ctr;
   u64 xer;
-  u32 fpscr;
-  u32 cr;
+  FPSCR fpscr;
+  u64 nia;  // next instruction address (not exposed afaik)
+  u64 cia;  // current instruction address (also not exposed, but used by the fetch unit)
+
+  union {
+    u32 cr;
+
+    struct {
+      u8 cr0 : 4;
+      u8 cr1 : 4;
+      u8 cr2 : 4;
+      u8 cr3 : 4;
+      u8 cr4 : 4;
+      u8 cr5 : 4;
+      u8 cr6 : 4;
+      u8 cr7 : 4;
+    };
+  };
 };

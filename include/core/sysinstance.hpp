@@ -1,8 +1,7 @@
 #pragma once
+#include "cell.hpp"
 
 
-#include "cellbe.hpp"
 struct SysInstance {
-  CellBE cellbe;
-
+  Cell cell_be;
 };

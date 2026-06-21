@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include "common/defs.hpp"
 
 namespace PPC {
@@ -25,9 +26,11 @@ namespace PPC {
     u8 opcode;
     u8 bo, bi, bd;
     bool aa, lk, lev;
-    u8 rt, ra, ds, xo;
+    u8 rt, ra, rs, xo;
     u16 d, si, ui;
+    i16 ds;
+    std::string mnemnonic;
   };
 
-  InstructionInfo decode(u32 op);
+  void decode(u32 op, InstructionInfo&);
 }  // namespace PPC

@@ -243,10 +243,55 @@ void Frontend::show_memory_viewer() {
 
 void Frontend::show_cpu_info() {
   ImGui::Begin("CPU INFO", &state.cpu_info_open, 0);
+  ImGui::Columns(2, "Registers");
+  for (u8 i = 0; i < 32; i++) {
+    if (i % 2 == 0 && i != 0) ImGui::NextColumn();
+    ImGui::Text("%s", fmt::format("r{:d} {}: {:#010x}", i, REG_NUM_TO_ALIAS_STR.at(i).c_str(), psx->cpu->get_reg(i)).c_str());
+  }
 
+  ImGui::Columns(1);
+  ImGui::Text("%s", fmt::format("PC: {:#08X}", sys_instance->cpu->pc).c_str());
+
+  // ImGui::SeparatorText("Branch Delay");
+  // ImGui::Text("%s", fmt::format("Enabled: {}", psx->cpu->branch_delay).c_str());
+  // ImGui::Text("%s", fmt::format("Next address: {:#010X}", psx->cpu->next_addr).c_str());
+  // ImGui::SeparatorText("Load Delay");
+  // ImGui::Text("%s", fmt::format("Enabled: {}", psx->cpu->load_delay_queued).c_str());
+  // ImGui::Text("%s", fmt::format("Target Reg: {}", REG_NUM_TO_ALIAS_STR.at(psx->cpu->load_delay_target_reg)).c_str());
+  // ImGui::Text("%s", fmt::format("Target Value: {:#010x}", psx->cpu->load_delay_value).c_str());
+
+  ImGui::Separator();
+
+  ImGui::BeginDisabled(true);
+  ImGui::Spacing();
+  ImGui::EndDisabled();
+
+  ImGui::Separator();
+
+  ImGui::Separator();
+
+  ImGui::InputInt("step amount", &state.step_amount, 0, 0, 0);
+  if (ImGui::Button("STEP")) {
+    sys_instance->cell_be.step();
+  }
+
+  if (ImGui::Button("STEP AMOUNT")) {
+    for (int i = 0; i < state.step_amount; i++) {
+      sys_instance->cell_be.step();
+    }
+  }
+
+  ImGui::Separator();
+  if (ImGui::Button("Enable Logging")) {
+    spdlog::set_level(spdlog::level::trace);
+  }
+  if (ImGui::Button("Disable Logging")) {
+    spdlog::set_level(spdlog::level::off);
+  }
 
   ImGui::End();
 }
+
 
 void Frontend::show_menu_bar() {
   if (ImGui::BeginMainMenuBar()) {
