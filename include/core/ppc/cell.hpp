@@ -8,6 +8,6 @@
 struct Cell {
   PPE ppe;
   std::array<SPE, 8> spe;
-
+  
   void step();
 };
