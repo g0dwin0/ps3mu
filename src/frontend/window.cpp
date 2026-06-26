@@ -243,14 +243,17 @@ void Frontend::show_memory_viewer() {
 
 void Frontend::show_cpu_info() {
   ImGui::Begin("CPU INFO", &state.cpu_info_open, 0);
-  // ImGui::Columns(2, "Registers");
-  // for (u8 i = 0; i < 32; i++) {
-  //   if (i % 2 == 0 && i != 0) ImGui::NextColumn();
-  //   ImGui::Text("%s", fmt::format("r{:d} {}: {:#010x}", i, REG_NUM_TO_ALIAS_STR.at(i).c_str(), psx->cpu->get_reg(i)).c_str());
-  // }
+  const auto& cpu = sys_instance->cell_be;
+  ImGui::Columns(2, "Registers");
+  for (u8 i = 0; i < 32; i++) {
+    if (i % 2 == 0 && i != 0) ImGui::NextColumn();
+    ImGui::Text("%s", fmt::format("r{:d}:   {:#010x}", i, sys_instance->cell_be.ppe.gpr.at(i)).c_str());
+  }
 
-  // ImGui::Columns(1);
-  // ImGui::Text("%s", fmt::format("PC: {:#08X}", sys_instance->cpu->pc).c_str());
+  ImGui::Columns(1);
+  ImGui::Text("%s", fmt::format("CIA: {:#010x}", cpu.ppe.cia).c_str());
+  ImGui::Text("%s", fmt::format("NIA: {:#010x}", cpu.ppe.nia).c_str());
+  
 
   // ImGui::SeparatorText("Branch Delay");
   // ImGui::Text("%s", fmt::format("Enabled: {}", psx->cpu->branch_delay).c_str());

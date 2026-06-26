@@ -1,4 +1,6 @@
 
+#include <sys/_endian.h>
+
 #include "cli11/CLI11.hpp"
 #include "common.hpp"
 #include "frontend/window.hpp"
@@ -18,9 +20,36 @@ int main(int argc, char** argv) {
   std::string filename = {};
   handle_args(argc, argv, filename);
 
+  PPC::InstructionInfo instructionInfo;
+
   std::vector<u8> file = read_file(filename);
 
-  parse_self(file);
+  auto executableInfo = parse_self(file);
+
+  SysInstance instance;
+
+  load_self(file, executableInfo, instance.bus.memory);
+
+
+
+  u32 entry_point = instance.cell_be.ppe.fetch(executableInfo.elf_header.e_entry);
+
+  instance.cell_be.ppe.nia = entry_point;
+  
+  Frontend f{&instance};
+
+
+
+   while (f.state.running) {
+    f.handle_events();
+    f.render_frame();
+  }
+  
+  f.shutdown();
+
+  
+  // system.join();
+
 
   return 0;
 }
