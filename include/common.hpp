@@ -4,6 +4,9 @@
 #define CONCAT(x, y) x##y
 #define EXPAND(x, y) CONCAT(x, y)
 #define RESERVED EXPAND(reserved, __LINE__)
+#define NTOHS(x) (x) = ntohs((__uint16_t)x)
+#define NTOHL(x) (x) = ntohl((__uint32_t)x)
+#define NTOHLL(x) (x) = ntohll((__uint64_t)x)
 
 #include <cassert>
 #include <fstream>
@@ -33,4 +36,20 @@ inline std::vector<u8> read_file(std::string filename) {
   vec.insert(vec.begin(), std::istream_iterator<u8>(file), std::istream_iterator<u8>());
 
   return vec;
+}
+
+inline void hexdump(std::vector<u8>& src, size_t len, size_t base) {
+  // TODO: add ascii setting
+  for (size_t i = 0; i < len; i++) {
+    if (i != 0 && i % 16 == 0) {
+      fmt::print("\n");
+    }
+
+    if (i % 16 == 0) fmt::print("{:#08x}: ", base + i);
+    
+
+    uint8_t value = src.at(base + i);
+    fmt::print("{:#04x}", value);
+    fmt::print(" ");
+  }
 }
