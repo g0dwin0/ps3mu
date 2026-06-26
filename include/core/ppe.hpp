@@ -1,7 +1,10 @@
 #pragma once
 #include <array>
+#include <cstddef>
 
+#include "bus.hpp"
 #include "common/defs.hpp"
+#include "ppc/parser.hpp"
 
 union FPSCR {
   struct __attribute__((packed)) {
@@ -32,10 +35,12 @@ union FPSCR {
     u8 XE       : 1;
     u8 NI       : 1;
     u8 RN       : 2;
-  };
+  } FPSCR;
 };
 
 struct PPE {
+
+
   std::array<u64, 32> gpr;
   std::array<u64, 32> fpr;
   u64 lr;
@@ -45,6 +50,13 @@ struct PPE {
   u64 nia;  // next instruction address (not exposed afaik)
   u64 cia;  // current instruction address (also not exposed, but used by the fetch unit)
 
+  Bus* bus = nullptr;
+  
+  PPC::InstructionInfo instruction_info;
+
+  u64 fetch(u64 addr);
+  void step();
+  void execute(PPC::InstructionInfo&);
   union {
     u32 cr;
 

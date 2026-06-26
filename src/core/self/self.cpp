@@ -2,7 +2,20 @@
 
 #include "common.hpp"
 
-cf_header_t parse_self(RawExecutableData& self_data) {
+std::string get_section_name_by_sh_name(u16 sh_name, const RawExecutableData& self_data, u64 offset_to_shstrtab) {
+  std::string section_name;
+
+  size_t ptr = 0;
+
+  while (self_data.at(offset_to_shstrtab + sh_name + ptr) != '\0') {
+    section_name += self_data.at(offset_to_shstrtab + sh_name + ptr);
+    ptr++;
+  }
+
+  return section_name;
+}
+
+ExecutableInfo parse_self(RawExecutableData& self_data) {
   static constexpr u32 VERSION_PS3 = 2;
   std::vector<Elf64_Phdr> program_headers;
 
@@ -62,10 +75,14 @@ cf_header_t parse_self(RawExecutableData& self_data) {
 
   for (size_t i = 0; i < elf_hdr->e_phnum; i++) {
     Elf64_Phdr* phdr = (Elf64_Phdr*)(self_data.data() + exthdr->phdr_offset + (i * sizeof(Elf64_Phdr)));
-    NTOHLL(phdr->p_type);
+
+    NTOHL(phdr->p_type);
+
+    fmt::println("p type: {}", phdr->p_type);
+
     fmt::println("=============== Program Header {} ===============", i);
-    fmt::println("p_type:                   {:#010x} - {}", phdr->p_type, section_type_map.at(phdr->p_type));
-    fmt::println("p_flags:                  {:#010x}", NTOHLL(phdr->p_flags));
+    fmt::println("p_type:                   {:#010x} - {}", phdr->p_type, segment_str_map.at(phdr->p_type));
+    fmt::println("p_flags:                  {:#010x}", NTOHL(phdr->p_flags));
     fmt::println("p_offset:                 {:#010x}", NTOHLL(phdr->p_offset));
     fmt::println("p_vaddr:                  {:#010x}", NTOHLL(phdr->p_vaddr));
     fmt::println("p_paddr:                  {:#010x}", NTOHLL(phdr->p_paddr));
@@ -78,43 +95,16 @@ cf_header_t parse_self(RawExecutableData& self_data) {
 
   ELF_SHDR* shdr         = (ELF_SHDR*)(self_data.data() + exthdr->shdr_offset + (elf_hdr->e_shstrndx * sizeof(ELF_SHDR)));
   u64 offset_to_shstrtab = ntohll(shdr->sh_offset) + cf_header->file_offset;
-  fmt::println("offset to shshtrtab: {:#010x}", offset_to_shstrtab);
-  std::vector<std::string> section_names;
-
-  size_t ptr = offset_to_shstrtab;
-  for (size_t i = 0; i < elf_hdr->e_shnum; i++) {
-    std::string section_name;
-    section_name.resize(64);
-
-    if (self_data.at(ptr) == '\0') goto end;
-
-    while (self_data.at(ptr) != '\0') {
-      section_name += (char)self_data.at(ptr);
-      ptr++;
-    }
-
-    // TODO: brain is fried, goto was easy solution, actually code this properly
-  end:
-    section_names.push_back(section_name);
-    ptr++;
-  }
-
-  fmt::println("retrieved section names: ");
-
-  for (const std::string& section_name : section_names) {
-    fmt::println("{}", section_name);
-  }
-
-  fmt::println("offset_to_shstrtab: {:#010x}", offset_to_shstrtab);
 
   for (size_t i = 0; i < elf_hdr->e_shnum; i++) {
     ELF_SHDR* shdr = (ELF_SHDR*)(self_data.data() + exthdr->shdr_offset + (i * sizeof(ELF_SHDR)));
     NTOHL(shdr->sh_type);
     NTOHLL(shdr->sh_offset);
+    NTOHL(shdr->sh_name);
 
     fmt::println("=============== Section Header {} ===============", i);
-    // fmt::println("sh_name:                  {}", std::string_view(reinterpret_cast<const char*>(&shdr->sh_name), 4));
-    fmt::println("sh_name:                  {:#010x}", NTOHL(shdr->sh_name));
+
+    fmt::println("sh_name:                  {} ({:#08x})", get_section_name_by_sh_name(shdr->sh_name, self_data, offset_to_shstrtab), shdr->sh_name);
     fmt::println("sh_type:                  {:#010x} - {}", shdr->sh_type, sh_type_map.at(shdr->sh_type));
     fmt::println("sh_flags:                 {:#010x}", NTOHLL(shdr->sh_flags));
     fmt::println("sh_addr:                  {:#010x}", NTOHLL(shdr->sh_addr));
@@ -124,9 +114,24 @@ cf_header_t parse_self(RawExecutableData& self_data) {
     fmt::println("sh_info:                  {:#010x}", NTOHL(shdr->sh_info));
     fmt::println("sh_addralign:             {:#010x}", NTOHLL(shdr->sh_addralign));
     fmt::println("sh_entsize:               {:#010x}", NTOHLL(shdr->sh_entsize));
-
-    // program_headers.push_back(*phdr);
   }
 
-  return {};
+  return {.cf_header = *cf_header, .ext_hdr = *exthdr, .elf_header = *elf_hdr, .program_headers = program_headers};
+}
+
+void load_self(RawExecutableData& self_data, const ExecutableInfo& info, std::vector<u8>& memory) {
+  u64 offset_to_file = info.cf_header.file_offset;
+  for (const auto& phdr : info.program_headers) {
+
+    if(phdr.p_type != PT_LOAD) continue;
+
+    u64 start = phdr.p_offset + offset_to_file;
+
+    for(size_t i = 0; i < phdr.p_filesz; i++) {
+      memory.at(phdr.p_vaddr + i) = self_data.at(start+i);
+    }
+    
+  }
+
+  fmt::println("all segments loaded");
 }

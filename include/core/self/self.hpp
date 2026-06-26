@@ -7,14 +7,14 @@
 // big thank you to the people that contributed to ps3devwiki :-)
 // https://www.psdevwiki.com/ps3/SELF_-_SPRX
 
-typedef uint64_t Elf64_Addr;
-typedef uint16_t Elf64_Half;
-typedef uint64_t Elf64_Off;
-typedef int32_t Elf64_Sword;
-typedef int64_t Elf64_Sxword;
-typedef uint32_t Elf64_Word;
-typedef uint64_t Elf64_Lword;
-typedef uint64_t Elf64_Xword;
+using Elf64_Addr   = uint64_t;
+using Elf64_Half   = uint16_t;
+using Elf64_Off    = uint64_t;
+using Elf64_Sword  = int32_t;
+using Elf64_Sxword = int64_t;
+using Elf64_Word   = uint32_t;
+using Elf64_Lword  = uint64_t;
+using Elf64_Xword  = uint64_t;
 
 // https://www.psdevwiki.com/ps3/SELF_-_SPRX#SCE_specific_ELF_types_(e_type)
 // SCE-specific definitions for e_type:
@@ -86,6 +86,16 @@ static constexpr u32 SHT_GROUP         = 0x11;
 static constexpr u32 SHT_SYMTAB_SHNDX  = 0x12;
 static constexpr u32 SHT_NUM           = 0x13;
 
+static constexpr u32 PF_X     = 0x1;
+static constexpr u32 PF_W     = 0x2;
+static constexpr u32 PF_R     = 0x4;
+static constexpr u32 PF_SPU_X = 0x00100000;
+static constexpr u32 PF_SPU_W = 0x00200000;
+static constexpr u32 PF_SPU_R = 0x00400000;
+static constexpr u32 PF_RSX_X = 0x01000000;
+static constexpr u32 PF_RSX_W = 0x02000000;
+static constexpr u32 PF_RSX_R = 0x04000000;
+
 struct elf_header {
   u8 e_ident[16];
   u16 e_type;
@@ -130,6 +140,7 @@ struct cf_header_t {
   uint16_t attribute;
   uint16_t category;
   uint32_t ext_header_size;
+  // offset to start encapsulated data -- after SELF header
   uint64_t file_offset;
   uint64_t file_size;
 } __attribute__((packed));
@@ -188,21 +199,53 @@ const std::unordered_map<u32, std::string> sh_type_map = {
     {  SHT_SCE_PSPRELA,   "SHT_SCE_PSPRELA"},
     {  SHT_SCE_PPURELA,   "SHT_SCE_PPURELA"},
 };
-
-const std::unordered_map<u32, std::string> section_type_map = {
-
-    {   PT_NULL,    "PT_NULL"},
-    {   PT_LOAD,    "PT_LOAD"},
-    {PT_DYNAMIC, "PT_DYNAMIC"},
-    { PT_INTERP,  "PT_INTERP"},
-    {   PT_NOTE,    "PT_NOTE"},
-    {  PT_SHLIB,   "PT_SHLIB"},
-    {   PT_PHDR,    "PT_PHDR"},
-    {    PT_TLS,     "PT_TLS"},
-    {   PT_LOOS,    "PT_LOOS"},
-    {   PT_HIOS,    "PT_HIOS"},
-    { PT_LOPROC,  "PT_LOPROC"},
-    { PT_HIPROC,  "PT_HIPROC"},
+const std::unordered_map<u32, std::string> p_flags_str_map = {
+    {    PF_X,     "PF_X"},
+    {    PF_W,     "PF_W"},
+    {    PF_R,     "PF_R"},
+    {PF_SPU_X, "PF_SPU_X"},
+    {PF_SPU_W, "PF_SPU_W"},
+    {PF_SPU_R, "PF_SPU_R"},
+    {PF_RSX_X, "PF_RSX_X"},
+    {PF_RSX_W, "PF_RSX_W"},
+    {PF_RSX_R, "PF_RSX_R"},
 };
+const std::unordered_map<u32, std::string> segment_str_map = {
 
-cf_header_t parse_self(RawExecutableData&);
+    {             PT_NULL,              "PT_NULL"},
+    {             PT_LOAD,              "PT_LOAD"},
+    {          PT_DYNAMIC,           "PT_DYNAMIC"},
+    {           PT_INTERP,            "PT_INTERP"},
+    {             PT_NOTE,              "PT_NOTE"},
+    {            PT_SHLIB,             "PT_SHLIB"},
+    {             PT_PHDR,              "PT_PHDR"},
+    {              PT_TLS,               "PT_TLS"},
+    {             PT_LOOS,              "PT_LOOS"},
+    {             PT_HIOS,              "PT_HIOS"},
+    {           PT_LOPROC,            "PT_LOPROC"},
+    {           PT_HIPROC,            "PT_HIPROC"},
+    {         PT_SCE_RELA,          "PT_SCE_RELA"},
+    {    PT_SCE_LICINFO_1,     "PT_SCE_LICINFO_1"},
+    {    PT_SCE_LICINFO_2,     "PT_SCE_LICINFO_2"},
+    {   PT_SCE_DYNLIBDATA,    "PT_SCE_DYNLIBDATA"},
+    {PT_SCE_PROCESS_PARAM, "PT_SCE_PROCESS_PARAM"},
+    { PT_SCE_MODULE_PARAM,  "PT_SCE_MODULE_PARAM"},
+    {        PT_SCE_RELRO,         "PT_SCE_RELRO"},
+    {      PT_SCE_COMMENT,       "PT_SCE_COMMENT"},
+    {   PT_SCE_LIBVERSION,    "PT_SCE_LIBVERSION"},
+    { PT_SCE_UNK_70000001,  "PT_SCE_UNK_70000001"},
+    {       PT_SCE_IOPMOD,        "PT_SCE_IOPMOD"},
+    {        PT_SCE_EEMOD,         "PT_SCE_EEMOD"},
+    {      PT_SCE_PSPRELA,       "PT_SCE_PSPRELA"},
+    {     PT_SCE_PSPRELA2,      "PT_SCE_PSPRELA2"},
+    {      PT_SCE_PPURELA,       "PT_SCE_PPURELA"},
+    {       PT_SCE_SEGSYM,        "PT_SCE_SEGSYM"},
+};
+struct ExecutableInfo {
+  cf_header_t cf_header;
+  ext_hdr ext_hdr;
+  elf_header elf_header;
+  std::vector<Elf64_Phdr> program_headers;
+};
+ExecutableInfo parse_self(RawExecutableData&);
+void load_self(RawExecutableData& self_data, const ExecutableInfo& info, std::vector<u8>& memory);
