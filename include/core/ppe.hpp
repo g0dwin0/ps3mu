@@ -41,24 +41,39 @@ union FPSCR {
 struct PPE {
 
 
-  std::array<u64, 32> gpr;
-  std::array<u64, 32> fpr;
-  u64 lr;
-  u64 ctr;
-  u64 xer;
-  FPSCR fpscr;
-  u64 nia;  // next instruction address (not exposed afaik)
-  u64 cia;  // current instruction address (also not exposed, but used by the fetch unit)
+  std::array<u64, 32> gpr{};
+  std::array<u64, 32> fpr{};
+  u64 lr{};
+  u64 ctr{};
+  u64 xer{};
+  FPSCR fpscr{};
+  u64 nia{};  // next instruction address (not exposed afaik)
+  u64 cia{};  // current instruction address (also not exposed, but used by the fetch unit)
 
   Bus* bus = nullptr;
   
-  PPC::InstructionInfo instruction_info;
+  PPC::InstructionInfo instruction_info{};
 
-  u64 fetch(u64 addr);
+  u32 fetch(u64 addr);
+
+
+  u64& get_reg_ref(u8 reg) {
+    return gpr.at(reg);
+  }
+  u64 get_reg(u8 reg) {
+    return gpr.at(reg);
+  }
+
+  void set_reg(u8 reg, u64 value) {
+    gpr.at(reg) = value;
+  }
+
+  
+  
   void step();
   void execute(PPC::InstructionInfo&);
   union {
-    u32 cr;
+    u32 cr{};
 
     struct {
       u8 cr0 : 4;

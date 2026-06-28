@@ -76,19 +76,12 @@ void PPC::rlwinm(PPC::InstructionInfo& info, PPE& ppe) {
   (void)ppe;
 };
 void PPC::ori(PPC::InstructionInfo& info, PPE& ppe) {
-  (void)info;
-  (void)ppe;
-
-  fmt::println("hi");
   u64 or_val = info.ui;
   fmt::println("or val: {:#010x}", or_val);
 
   ppe.gpr.at(info.ra) = (u64)(ppe.gpr.at(info.rs) | or_val);
 };
 void PPC::oris(PPC::InstructionInfo& info, PPE& ppe) {
-  (void)info;
-  (void)ppe;
-  fmt::println("hi");
   u64 or_val = info.ui << 16;
   fmt::println("or val: {:#010x}", or_val);
 
@@ -131,8 +124,10 @@ void PPC::gen_load(PPC::InstructionInfo& info, PPE& ppe) {
       ea = b + info.d;
 
       ppe.gpr.at(info.rt) = ppe.bus->read<u32>(ea);
-      fmt::println("set!");
+      break;
     }
+
+
 
     default: {
       fmt::println("no decode logic for: {}", info.opcode);
@@ -143,4 +138,21 @@ void PPC::gen_load(PPC::InstructionInfo& info, PPE& ppe) {
 void PPC::gen_store(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
+
+
+  switch(info.opcode) {
+
+    case 62: {
+      u64 ea = ppe.get_reg(info.ra) + (i16)(info.ds << 2);
+
+
+      ppe.bus->write<u64>(ea, ppe.get_reg(info.rs));
+      fmt::println("written");
+
+      ppe.set_reg(info.ra, ea);
+      break;
+    }
+    default: assert(0);
+
+  }
 };

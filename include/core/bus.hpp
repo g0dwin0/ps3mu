@@ -1,6 +1,8 @@
 #pragma once
-#include <vector>
+#include <arpa/inet.h>
 
+#include <vector>
+#include "common.hpp"
 #include "common/defs.hpp"
 #include "types.hpp"
 
@@ -9,14 +11,25 @@ struct Bus {
 
   template <AccessWidth Width>
   [[nodiscard]] Width read(u32 _address) {
-    (void)_address;
+    Width r = *(Width*)&memory.at(_address);
 
-    return *(Width*)&memory.at(_address);
+    if constexpr (sizeof(Width) == 2) {
+      r = htons(r);
+    }
+    if constexpr (sizeof(Width) == 4) {
+      r = htonl(r);
+    }
+    if constexpr (sizeof(Width) == 8) {
+      r = htonll(r);
+    }
+
+    return r;
   }
 
   template <AccessWidth Width>
-  [[nodiscard]] Width write(u32 _address, u32 value) {
-    *(Width)&memory.at(_address) = value;
+  void write(u32 _address, u32 value) {
+    fmt::println("<W{}> {:#016x} -> {:#016x}", sizeof(Width) * 8, _address, value);
+    *(Width*)&memory.at(_address) = value;
   }
 
   std::vector<u8> memory;

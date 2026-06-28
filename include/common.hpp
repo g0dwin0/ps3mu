@@ -1,12 +1,13 @@
 #pragma once
 
 #include <climits>
+#include <arpa/inet.h>
+#include "types.hpp"
 #define CONCAT(x, y) x##y
 #define EXPAND(x, y) CONCAT(x, y)
 #define RESERVED EXPAND(reserved, __LINE__)
-#define NTOHS(x) (x) = ntohs((__uint16_t)x)
-#define NTOHL(x) (x) = ntohl((__uint32_t)x)
-#define NTOHLL(x) (x) = ntohll((__uint64_t)x)
+#define htonll(x) ((((long long)htonl(x)) << 32) + (htonl((x) >> 32)))
+
 
 #include <cassert>
 #include <fstream>
@@ -46,10 +47,28 @@ inline void hexdump(std::vector<u8>& src, size_t len, size_t base) {
     }
 
     if (i % 16 == 0) fmt::print("{:#08x}: ", base + i);
-    
 
     uint8_t value = src.at(base + i);
     fmt::print("{:#04x}", value);
     fmt::print(" ");
   }
+}
+
+
+template <AccessWidth width>
+inline width read_p_be(width val) {
+  width r = 0;
+
+  if constexpr (sizeof(val) == 2) {
+    r = htons(val);
+  }
+  if constexpr (sizeof(val) == 4) {
+    r = htonl(val);
+  }
+  if constexpr (sizeof(val) == 8) {
+    r = htonll(val);
+  }
+
+
+return r;
 }

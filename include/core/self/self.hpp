@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -121,7 +122,7 @@ struct program_identification_header {
   u64 padding;
 } __attribute__((packed));
 
-struct ext_hdr {
+struct ext_hdr_t {
   u64 ext_hdr_version;
   u64 program_identification_hdr_offset;
   u64 ehdr_offset;
@@ -243,7 +244,7 @@ const std::unordered_map<u32, std::string> segment_str_map = {
 };
 struct ExecutableInfo {
   cf_header_t cf_header;
-  ext_hdr ext_hdr;
+  ext_hdr_t ext_hdr;
   elf_header elf_header;
   std::vector<Elf64_Phdr> program_headers;
 };

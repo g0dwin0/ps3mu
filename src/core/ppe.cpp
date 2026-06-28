@@ -5,9 +5,9 @@
 #include "ppc/parser.hpp"
 #include "ppc/ppc.hpp"
 
-u64 PPE::fetch(u64 addr) {
+u32 PPE::fetch(u64 addr) {
   fmt::println("reading: {:#010x}", addr);
-  return ntohll(*(u64*)(this->bus->memory.data() + addr)) >> 32;
+  return read_p_be<u32>(*(u32*)(this->bus->memory.data() + addr));
 }
 
 void PPE::step() {
@@ -22,6 +22,7 @@ void PPE::step() {
 }
 
 void PPE::execute(PPC::InstructionInfo& info) {
+  fmt::println("{}", info.mnemnonic);
   switch (info.opcode) {
     case 2: {
       PPC::tdi(info, *this);
@@ -56,10 +57,10 @@ void PPE::execute(PPC::InstructionInfo& info) {
       PPC::addi(info, *this);
       break;
     }
-    // case 15: {
-    //   PPC::addis(info, *this);
-    //   break;
-    // }
+      // case 15: {
+      //   PPC::addis(info, *this);
+      //   break;
+      // }
 
     case ORI: {
       PPC::ori(info, *this);
@@ -78,7 +79,7 @@ void PPE::execute(PPC::InstructionInfo& info) {
     case 40:
     case 41:
     case 42:
-    case 43:{
+    case 43: {
       PPC::gen_load(info, *this);
       break;
     };
@@ -93,6 +94,15 @@ void PPE::execute(PPC::InstructionInfo& info) {
       PPC::gen_store(info, *this);
       break;
     };
+
+    case 62: {
+      if(info.xo == 1) {
+        PPC::gen_store(info, *this);
+      } else {
+        assert(0);
+      }
+      break;
+    }
 
     default: assert(0 && info.opcode);
   }

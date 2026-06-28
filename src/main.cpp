@@ -1,12 +1,11 @@
 
-#include <sys/_endian.h>
-
 #include "cli11/CLI11.hpp"
 #include "common.hpp"
 #include "frontend/window.hpp"
 #include "ppc/parser.hpp"
 #include "self/self.hpp"
 #include "sysinstance.hpp"
+#include "vmm/vmm.hpp"
 
 int handle_args(int& argc, char** argv, std::string& filename) {
   CLI::App app{"", "ps3mu"};
@@ -32,6 +31,9 @@ int main(int argc, char** argv) {
 
 
 
+
+  fmt::println("e_entry: {:#016x}", executableInfo.elf_header.e_entry);
+
   u32 entry_point = instance.cell_be.ppe.fetch(executableInfo.elf_header.e_entry);
 
   instance.cell_be.ppe.nia = entry_point;
@@ -45,9 +47,13 @@ int main(int argc, char** argv) {
     f.render_frame();
   }
   
-  f.shutdown();
+  // f.shutdown();
 
+
+  // VMM vmm{PPC64_PAGE_SIZE};
   
+
+  // vmm.
   // system.join();
 
 
