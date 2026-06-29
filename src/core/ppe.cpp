@@ -133,9 +133,15 @@ void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
 
   PPC::InstructionFormat format = PPC::InstructionFormat::UNDEFINED;
 
-  format = PPC::opcode_info_map.at(opcd).instruction_format;
-
-  fmt::println("format: {}", PPC::instruction_format_str_map.at(format));
+  if (opcd != 31) {  // check if not ext op
+    format = PPC::opcode_info_map.at(opcd).instruction_format;
+    fmt::println("format: {}", PPC::instruction_format_str_map.at(format));
+  } else {  // if ext op, determine format from instruction bits
+    u16 instruction_bits = PPC::get_bits<u16, u32>(op, {21, 30});
+    fmt::println("instruction bits: {}", instruction_bits);
+    format = PPC::ext_op_31_opcode_info_map.at(instruction_bits).instruction_format;
+    fmt::println("format: {}", PPC::instruction_format_str_map.at(format));
+  }
 
   switch (format) {
     case PPC::InstructionFormat::I_FORM: {
@@ -157,7 +163,11 @@ void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
 
       break;
     }
-    case PPC::InstructionFormat::SC_FORM:{assert(0); exit(-1); break;}
+    case PPC::InstructionFormat::SC_FORM: {
+      assert(0);
+      exit(-1);
+      break;
+    }
     case PPC::InstructionFormat::D_FORM: {
       fmt::println("decoding D_FORM instruction");
       instruction_info.rt = instruction_info.rs = instruction_info.to = instruction_info.frt = instruction_info.frs = PPC::get_bits<u8, u32>(op, {6, 10});
@@ -209,7 +219,7 @@ void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
 
           // 0b11111000001000011111111110000001
           instruction_info.ra = PPC::get_bits<u8, u32>(op, {11, 15});
-          instruction_info.ds = PPC::get_bits<i16, u32>(op, {16, 29});
+          instruction_info.ds = (i16)(PPC::get_bits<u16, u32>(op, {16, 29}));
           instruction_info.xo = PPC::get_bits<u8, u32>(op, {30, 31});
 
           fmt::println("RT: {}", instruction_info.rt);
@@ -231,17 +241,82 @@ void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
 
       break;
     }
-    case PPC::InstructionFormat::A_FORM: {assert(0); exit(-1); break;}
-    case PPC::InstructionFormat::M_FORM: {exit(-1); break;}
-    case PPC::InstructionFormat::MD_FORM: {assert(0); exit(-1); break;}
-    case PPC::InstructionFormat::MDS_FORM: {assert(0); exit(-1); break;}
-    case PPC::InstructionFormat::X_FORM: {assert(0); exit(-1); break;}
-    case PPC::InstructionFormat::XL_FORM: {assert(0); exit(-1); break;}
-    case PPC::InstructionFormat::XFX_FORM: {assert(0); exit(-1); break;}
-    case PPC::InstructionFormat::XFL_FORM: {assert(0); exit(-1); break;}
-    case PPC::InstructionFormat::XS_FORM: {assert(0); exit(-1); break;}
-    case PPC::InstructionFormat::XO_FORM: {assert(0); exit(-1); break;}
-    case PPC::InstructionFormat::UNDEFINED: {assert(0); exit(-1); break;}
+    case PPC::InstructionFormat::A_FORM: {
+      assert(0);
+      exit(-1);
+      break;
+    }
+    case PPC::InstructionFormat::M_FORM: {
+      exit(-1);
+      break;
+    }
+    case PPC::InstructionFormat::MD_FORM: {
+      assert(0);
+      exit(-1);
+      break;
+    }
+    case PPC::InstructionFormat::MDS_FORM: {
+      assert(0);
+      exit(-1);
+      break;
+    }
+    case PPC::InstructionFormat::X_FORM: {
+      assert(0);
+      exit(-1);
+      break;
+    }
+    case PPC::InstructionFormat::XL_FORM: {
+      assert(0);
+      exit(-1);
+      break;
+    }
+    case PPC::InstructionFormat::XFX_FORM: {
+      assert(0);
+      exit(-1);
+      break;
+    }
+    case PPC::InstructionFormat::XFL_FORM: {
+      assert(0);
+      exit(-1);
+      break;
+    }
+    case PPC::InstructionFormat::XS_FORM: {
+      assert(0);
+      exit(-1);
+      break;
+    }
+    case PPC::InstructionFormat::XO_FORM: {
+      instruction_info.rt = PPC::get_bits<u8, u32>(op, {6, 10});
+      instruction_info.ra = PPC::get_bits<u8, u32>(op, {11, 15});
+      instruction_info.rb = PPC::get_bits<u8, u32>(op, {16, 20});
+      instruction_info.oe = PPC::get_bits<u8, u32>(op, {21, 21});
+      instruction_info.xo = PPC::get_bits<u8, u32>(op, {22, 30});
+      instruction_info.rc = PPC::get_bits<u8, u32>(op, {31, 31});
+
+
+
+      fmt::println("RT={}", instruction_info.rt);
+      fmt::println("RA={}", instruction_info.ra);
+      fmt::println("RB={}", instruction_info.rb);
+      
+      fmt::println("RC={}", instruction_info.rc);
+      fmt::println("OE={}", instruction_info.oe);
+      fmt::println("XO={}", instruction_info.xo);
+      fmt::println("XO={}", instruction_info.xo);
+      fmt::println("(RA)={}", ((i32)get_reg(instruction_info.ra)*2));
+
+      
+      
+      set_reg(instruction_info.rt, ((i32)get_reg(instruction_info.ra) + (i32)get_reg(instruction_info.rb)));
+      // assert(0);
+      // exit(-1);
+      break;
+    }
+    case PPC::InstructionFormat::UNDEFINED: {
+      assert(0);
+      exit(-1);
+      break;
+    }
     default: {
       throw std::runtime_error(std::format("unimplemented decoder for undefined opcode: {:#04x}", opcd));
       break;

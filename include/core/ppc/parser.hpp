@@ -30,8 +30,8 @@ namespace PPC {
   struct InstructionInfo {
     u8 opcode;
     u8 bo, bi, bd;
-    bool aa, lk, lev;
-    u8 rt, ra, rs, xo, bf, l, frt, frs, to;
+    bool aa, lk, lev, rc;
+    u8 rt, ra, rb, oe, rs, xo, bf, l, frt, frs, to;
     u16 d, si, ui;
     i16 ds;
     u64 li;

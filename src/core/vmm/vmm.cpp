@@ -36,8 +36,6 @@ phys_page VMM::get_page_number(u64 virt_addr) {
   return phys_page_num;
 }
 
-u64 VMM::VIRT_TO_PHYS(u64 virt_addr) {
-  // u64 effective_addr = virt_addr
-
+u64 VMM::virt_to_phys(u64 virt_addr) {
   return virt_addr;
 }

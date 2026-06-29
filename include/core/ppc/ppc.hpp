@@ -70,7 +70,6 @@ namespace PPC {
   };
 
   const std::unordered_map<u8, OpcodeInfo> opcode_info_map = {
-
       {0x02,                {"tdi", InstructionFormat::D_FORM}},
       {0x03,                {"twi", InstructionFormat::D_FORM}},
       {0x07,              {"mulli", InstructionFormat::D_FORM}},
@@ -97,7 +96,7 @@ namespace PPC {
       {0x1C,              {"andi.", InstructionFormat::D_FORM}},
       {0x1D,             {"andis.", InstructionFormat::D_FORM}},
       {0x1E,       {"FX_DWD_ROT", InstructionFormat::MDS_FORM}},
-      {0x1F,         {"FX_EXT_OPS", InstructionFormat::M_FORM}},
+      {0x1F,         {"FX_EXT_OPS", InstructionFormat::UNDEFINED}},
       {0x20,                {"lwz", InstructionFormat::D_FORM}},
       {0x21,            {"lwzu", InstructionFormat::UNDEFINED}},
       {0x22,                {"lbz", InstructionFormat::D_FORM}},
@@ -126,6 +125,15 @@ namespace PPC {
       {0x3B,  {"FP_SINGLE_EXT_OPS", InstructionFormat::A_FORM}},
       {0x3E, {"FX_DS_FORM_STORES", InstructionFormat::DS_FORM}},
       {0x3F,  {"FP_DOUBLE_EXT_OPS", InstructionFormat::D_FORM}},
+  };
+
+
+
+  const std::unordered_map<u16, OpcodeInfo> ext_op_31_opcode_info_map = {
+      {0x0,                {"cmp", InstructionFormat::X_FORM}},
+      {138,                {"add", InstructionFormat::XO_FORM}},
+      {266,                {"add", InstructionFormat::XO_FORM}},
+      
   };
 
   void tdi(PPC::InstructionInfo&, PPE& ppe);

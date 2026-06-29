@@ -147,7 +147,7 @@ void PPC::gen_store(PPC::InstructionInfo& info, PPE& ppe) {
 
 
       ppe.bus->write<u64>(ea, ppe.get_reg(info.rs));
-      fmt::println("written");
+      // fmt::println("written");
 
       ppe.set_reg(info.ra, ea);
       break;

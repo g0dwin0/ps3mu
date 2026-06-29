@@ -8,7 +8,7 @@
 #include "vmm/vmm.hpp"
 
 struct Bus {
-  Bus() { memory.resize(512 * 1024 * 1024, 0); }
+  Bus(): memory(512*1024*1024) {}
 
 
 

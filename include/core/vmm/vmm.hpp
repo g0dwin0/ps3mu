@@ -34,7 +34,7 @@ struct VMM {
 
   u32 page_size{};
   std::unordered_map<virt_page, phys_page> page_table{};
-  u64 VIRT_TO_PHYS(u64 virt_addr);
+  u64 virt_to_phys(u64 virt_addr);
 };
 
 static VMM vmm{PPC64_PAGE_SIZE};
