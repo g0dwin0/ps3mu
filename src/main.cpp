@@ -43,7 +43,7 @@ int main(int argc, char** argv) {
 
   f.shutdown();
 
-  //   vmm.get_page_number(0x000000ffffff90);
+    vmm.get_page_number(0x000000ffffff90);
 
   // vmm.
   // system.join();

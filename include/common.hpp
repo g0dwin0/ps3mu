@@ -6,8 +6,9 @@
 #define CONCAT(x, y) x##y
 #define EXPAND(x, y) CONCAT(x, y)
 #define RESERVED EXPAND(reserved, __LINE__)
-// #define htonll(x) ((((long long)htonl(x)) << 32) + (htonl((x) >> 32)))
-
+#ifdef __unix
+#define htonll(x) ((((long long)htonl(x)) << 32) + (htonl((x) >> 32)))
+#endif
 
 #include <cassert>
 #include <fstream>

@@ -15,14 +15,13 @@ struct OuterPageTable {
 
 using PageTableEntry = std::unordered_map<u16, u16>;
 struct VMM {
+  u32 page_size{};
   using ThirdLevelTable  = std::unordered_map<u16, i32>;
   using SecondLevelTable = std::unordered_map<u16, ThirdLevelTable*>;
 
   std::unordered_map<u16, SecondLevelTable*> first_level_table_base;  // holds pointers to the bases of a 2nd-level page tables, indexed into using first level
   std::unordered_map<u16, ThirdLevelTable*> second_level_table_base;  // holds pointers to the bases of a 3rd-level page tables, indexed into second level
   std::unordered_map<u16, u16> third_level_page_table;                // holds page entries, indexed into using third level
-
-  VMM() = delete;
 
   VMM(u32 page_sz) {
     assert((page_size & (page_size - 1)) == 0);
@@ -32,7 +31,6 @@ struct VMM {
   void map();
   phys_page get_page_number(u64 virt_addr);
 
-  u32 page_size{};
   std::unordered_map<virt_page, phys_page> page_table{};
   u64 virt_to_phys(u64 virt_addr);
 };

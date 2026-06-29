@@ -23,7 +23,7 @@ elseif (WIN32)
 endif ()
 
 
-target_include_directories(${PROJECT_NAME} PRIVATE include include/core lib/ lib/imgui lib/imgui/backends)
+target_include_directories(${PROJECT_NAME} PRIVATE include include/core include/core/vmm lib/ lib/imgui lib/imgui/backends)
 
 
 if (NOT SDL3_FOUND)
