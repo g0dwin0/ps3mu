@@ -152,4 +152,23 @@ namespace PPC {
   void gen_load(PPC::InstructionInfo&, PPE& ppe);
   void gen_store(PPC::InstructionInfo&, PPE& ppe);
   
+
+   template <typename RetValWidth, typename InputWidth>
+  RetValWidth get_bits(u32 n, std::pair<u8, u8> be_range) {
+    const auto& [start, end] = be_range;
+
+    assert(start < end);
+
+    n = (n >> ((sizeof(InputWidth) * 8) - end - 1));
+
+    u16 mask = (1 << (end + 1 - start)) - 1;
+
+    if (start != 0) {
+      n &= mask;
+    }
+
+    // fmt::println("retval: {}\n", (RetValWidth)n);
+
+    return n;
+  }
 }  // namespace PPC

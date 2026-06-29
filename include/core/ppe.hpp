@@ -69,7 +69,8 @@ struct PPE {
   }
 
   
-  
+
+  void decode(u32 op, PPC::InstructionInfo& instruction_info);
   void step();
   void execute(PPC::InstructionInfo&);
   union {

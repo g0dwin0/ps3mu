@@ -1,17 +1,26 @@
 #pragma once
 #include "common.hpp"
 
-using phys_page = u16;
-using virt_page = u16;
-using phys_addr = u64;
-using virt_addr = u64;
-
+using phys_page                      = u64;
+using virt_page                      = u64;
+using virt_addr                      = u64;
+static constexpr u64 UNMAPPED_PAGE   = -0x1;
 static constexpr u64 PPC64_PAGE_SIZE = 0x10000;
 
+// 0x(FFFF)(FFFF)(FFFF)[FFFF]
 
-struct PageTableEntry {};
+struct OuterPageTable {
+  std::unordered_map<u16, u16> page_table;
+};
 
+using PageTableEntry = std::unordered_map<u16, u16>;
 struct VMM {
+  using ThirdLevelTable  = std::unordered_map<u16, i32>;
+  using SecondLevelTable = std::unordered_map<u16, ThirdLevelTable*>;
+
+  std::unordered_map<u16, SecondLevelTable*> first_level_table_base;  // holds pointers to the bases of a 2nd-level page tables, indexed into using first level
+  std::unordered_map<u16, ThirdLevelTable*> second_level_table_base;  // holds pointers to the bases of a 3rd-level page tables, indexed into second level
+  std::unordered_map<u16, u16> third_level_page_table;                // holds page entries, indexed into using third level
 
   VMM() = delete;
 
@@ -20,35 +29,12 @@ struct VMM {
     page_size = page_sz;
   };
 
+  void map();
+  phys_page get_page_number(u64 virt_addr);
+
   u32 page_size{};
   std::unordered_map<virt_page, phys_page> page_table{};
+  u64 VIRT_TO_PHYS(u64 virt_addr);
 };
 
-struct TLB {
-  // identifier for entry in the TLB
-  using Tag      = u32;
-
-  // physical page number (not the address!)
-  using phys_page_t = u32;
-
-  std::unordered_map<Tag, phys_page_t> tlb;
-
-  void evict(Tag tag) { tlb.erase(tag); };
-  phys_page_t read(u64 address) {
-    Tag tag            = address / PPC64_PAGE_SIZE;
-    phys_page_t phys_page = 0;
-
-    if (tlb.contains(tag)) {
-      return phys_page;
-    } else {
-      // walk page table
-
-      // insert tag & phys into TLB
-      u32 phys = 0x0;
-      tlb.insert({tag, phys});
-
-      return phys_page;
-    }
-  }
-  u8 MAX_TLB_SIZE = 0xFF;
-};
+static VMM vmm{PPC64_PAGE_SIZE};

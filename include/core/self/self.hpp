@@ -97,7 +97,7 @@ static constexpr u32 PF_RSX_X = 0x01000000;
 static constexpr u32 PF_RSX_W = 0x02000000;
 static constexpr u32 PF_RSX_R = 0x04000000;
 
-struct elf_header {
+struct elf_header_t {
   u8 e_ident[16];
   u16 e_type;
   u16 e_machine;
@@ -245,7 +245,7 @@ const std::unordered_map<u32, std::string> segment_str_map = {
 struct ExecutableInfo {
   cf_header_t cf_header;
   ext_hdr_t ext_hdr;
-  elf_header elf_header;
+  elf_header_t elf_header;
   std::vector<Elf64_Phdr> program_headers;
 };
 ExecutableInfo parse_self(RawExecutableData&);

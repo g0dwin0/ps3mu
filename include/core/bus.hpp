@@ -5,13 +5,17 @@
 #include "common.hpp"
 #include "common/defs.hpp"
 #include "types.hpp"
+#include "vmm/vmm.hpp"
 
 struct Bus {
   Bus() { memory.resize(512 * 1024 * 1024, 0); }
 
+
+
+  
   template <AccessWidth Width>
   [[nodiscard]] Width read(u32 _address) {
-    Width r = *(Width*)&memory.at(_address);
+    Width r = *(Width*)&memory.at(vmm.VIRT_TO_PHYS(_address));
 
     if constexpr (sizeof(Width) == 2) {
       r = htons(r);

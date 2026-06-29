@@ -1,5 +1,5 @@
 #include "self/self.hpp"
-
+#include "vmm/vmm.hpp"
 #include "common.hpp"
 
 std::string get_section_name_by_sh_name(u16 sh_name, const RawExecutableData& self_data, u64 offset_to_shstrtab) {
@@ -31,8 +31,7 @@ ExecutableInfo parse_self(RawExecutableData& self_data) {
   fmt::println("file offset size:       {:#010x}", _cf_header.file_offset = read_p_be<u64>(cf_header->file_offset));
   fmt::println("file size:              {:#010x}", _cf_header.file_size = read_p_be<u64>(cf_header->file_size));
 
-  if (read_p_be<u32>(cf_header->version) != VERSION_PS3) {
-    spdlog::error("invalid certified header, bad version (got {})", cf_header->version);
+  if (_cf_header.version != VERSION_PS3) {
     assert(0);
   }
 
@@ -57,8 +56,8 @@ ExecutableInfo parse_self(RawExecutableData& self_data) {
   fmt::println("program_type:               {:#010x}", _program_ident_hdr.program_type = read_p_be<u32>(program_ident_hdr->program_type));
   fmt::println("program_sceversion:         {:#016x}", _program_ident_hdr.program_sceversion = read_p_be<u64>(program_ident_hdr->program_sceversion));
 
-  elf_header* elf_hdr = (elf_header*)(self_data.data() + _ext_hdr.ehdr_offset);
-  elf_header _elf_hdr;
+  elf_header_t* elf_hdr = (elf_header_t*)(self_data.data() + _ext_hdr.ehdr_offset);
+  elf_header_t _elf_hdr;
   fmt::println("=============== ELF Header ===============");
   fmt::println("e_ident:                    {}", std::string_view(reinterpret_cast<const char*>(&elf_hdr->e_ident), 16));
   //   fmt::println("e_ident:       {:#010x}", read_p_be<u64>(elf_hdr->e_ident));
@@ -80,8 +79,9 @@ ExecutableInfo parse_self(RawExecutableData& self_data) {
     Elf64_Phdr* phdr = (Elf64_Phdr*)(self_data.data() + _ext_hdr.phdr_offset + (i * sizeof(Elf64_Phdr)));
     Elf64_Phdr _phdr;
 
+    _phdr.p_type = read_p_be<u32>(phdr->p_type);
     fmt::println("=============== Program Header {} ===============", i);
-    fmt::println("p_type:                   {:#010x} - {}", _phdr.p_type = read_p_be<u32>(phdr->p_type), segment_str_map.at(_phdr.p_type));
+    fmt::println("p_type:                   {:#010x} - {}", (u32)_phdr.p_type, segment_str_map.at(_phdr.p_type));
     fmt::println("p_flags:                  {:#010x}", _phdr.p_flags = read_p_be<u32>(phdr->p_flags));
     fmt::println("p_offset:                 {:#016x}", _phdr.p_offset = read_p_be<u64>(phdr->p_offset));
     fmt::println("p_vaddr:                  {:#016x}", _phdr.p_vaddr = read_p_be<u64>(phdr->p_vaddr));
@@ -127,6 +127,8 @@ void load_self(RawExecutableData& self_data, const ExecutableInfo& info, std::ve
 
     u64 start = phdr.p_offset + offset_to_file;
 
+// vmm
+    
     for (size_t i = 0; i < phdr.p_filesz; i++) {
       memory.at(phdr.p_vaddr + i) = self_data.at(start + i);
     }
