@@ -55,6 +55,24 @@ void PPC::addic(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
 };
+void PPC::branch(PPC::InstructionInfo& info, PPE& ppe) {
+  (void)info;
+  (void)ppe;
+
+  assert(!info.aa && info.lk);
+  // if(info.aa) {
+  // assume aa = 0, lk = 1
+
+  ppe.nia = ppe.cia + (info.li << 2);
+  fmt::println("calculated NIA: {:#016x}", ppe.nia);
+
+  if (info.lk) {
+    ppe.lr = ppe.cia;
+  }
+
+  fmt::println("end of branch");
+};
+
 void PPC::bc(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
@@ -107,6 +125,46 @@ void PPC::lwz(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
 };
+void PPC::mfspr(PPC::InstructionInfo& info, PPE& ppe) {
+  SPR spr = (SPR)((info.d >> 5) & 0b11111);
+
+  switch (spr) {
+    case SPR::XER: {
+      ppe.gpr.at(info.rt) = ppe.xer;
+      break;
+    }
+    case SPR::LR: {
+      ppe.gpr.at(info.rt) = ppe.lr;
+      break;
+    }
+    case SPR::CTR: {
+      ppe.gpr.at(info.rt) = ppe.ctr;
+      break;
+    }
+
+    default: return;
+  }
+}
+void PPC::mtspr(PPC::InstructionInfo& info, PPE& ppe) {
+  SPR spr = (SPR)((info.d >> 5) & 0b11111);
+
+  switch (spr) {
+    case SPR::XER: {
+      ppe.xer = ppe.gpr.at(info.rt);
+      break;
+    }
+    case SPR::LR: {
+      ppe.lr = ppe.gpr.at(info.rt);
+      break;
+    }
+    case SPR::CTR: {
+      ppe.ctr = ppe.gpr.at(info.rt);
+      break;
+    }
+
+    default: return;
+  }
+}
 
 void PPC::gen_load(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
@@ -127,32 +185,32 @@ void PPC::gen_load(PPC::InstructionInfo& info, PPE& ppe) {
       break;
     }
 
-
-
     default: {
       fmt::println("no decode logic for: {}", info.opcode);
       assert(0);
     }
   }
 };
+
 void PPC::gen_store(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
 
-
-  switch(info.opcode) {
-
+  switch (info.opcode) {
     case 62: {
       u64 ea = ppe.get_reg(info.ra) + (i16)(info.ds << 2);
 
+      fmt::println("ea: {:#016x}", ea);
 
       ppe.bus->write<u64>(ea, ppe.get_reg(info.rs));
       // fmt::println("written");
 
-      ppe.set_reg(info.ra, ea);
+      if (info.xo) {
+        ppe.set_reg(info.ra, ea);
+      }
+
       break;
     }
-    default: assert(0);
-
+    default: assert(0 && "no valid gen store opcode");
   }
 };

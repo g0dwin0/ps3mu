@@ -38,9 +38,19 @@ union FPSCR {
   } FPSCR;
 };
 
+enum struct SPR : u8 {
+  XER = 1,
+  LR  = 8,
+  CTR = 9,
+};
+
+const std::unordered_map<SPR, std::string> spr_enum_to_str_map = {
+    {SPR::XER, "XER"},
+    { SPR::LR,  "LR"},
+    {SPR::CTR, "CTR"}
+};
+
 struct PPE {
-
-
   std::array<u64, 32> gpr{};
   std::array<u64, 32> fpr{};
   u64 lr{};
@@ -51,24 +61,15 @@ struct PPE {
   u64 cia{};  // current instruction address (also not exposed, but used by the fetch unit)
 
   Bus* bus = nullptr;
-  
+
   PPC::InstructionInfo instruction_info{};
 
   u32 fetch(u64 addr);
 
+  u64& get_reg_ref(u8 reg) { return gpr.at(reg); }
+  u64 get_reg(u8 reg) { return gpr.at(reg); }
 
-  u64& get_reg_ref(u8 reg) {
-    return gpr.at(reg);
-  }
-  u64 get_reg(u8 reg) {
-    return gpr.at(reg);
-  }
-
-  void set_reg(u8 reg, u64 value) {
-    gpr.at(reg) = value;
-  }
-
-  
+  void set_reg(u8 reg, u64 value) { gpr.at(reg) = value; }
 
   void decode(u32 op, PPC::InstructionInfo& instruction_info);
   void step();

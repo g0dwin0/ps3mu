@@ -28,6 +28,7 @@ namespace PPC {
       {InstructionFormat::UNDEFINED, "UNDEFINED"},
   };
   struct InstructionInfo {
+    u32 full_opcode;
     u8 opcode;
     u8 bo, bi, bd;
     bool aa, lk, lev, rc;

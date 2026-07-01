@@ -33,6 +33,7 @@ int main(int argc, char** argv) {
   u32 entry_point = instance.cell_be.ppe.fetch(executableInfo.elf_header.e_entry);
 
   instance.cell_be.ppe.nia = entry_point;
+  instance.cell_be.ppe.cia = entry_point;
 
   Frontend f{&instance};
 
@@ -43,7 +44,7 @@ int main(int argc, char** argv) {
 
   f.shutdown();
 
-    vmm.get_page_number(0x000000ffffff90);
+    // vmm.get_page_number(0x000000ffffff90);
 
   // vmm.
   // system.join();

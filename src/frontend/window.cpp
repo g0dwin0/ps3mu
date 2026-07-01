@@ -25,78 +25,78 @@ void Frontend::handle_events() {
         state.running = false;
         break;
       }
-/*
-      case SDL_EVENT_KEY_DOWN: {
-        if (state.keyboard_state[settings.keybinds.control_map.at(RIGHT).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.RIGHT = 0;
-        }
-        if (state.keyboard_state[settings.keybinds.control_map.at(LEFT).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.LEFT = 0;
-        }
-        if (state.keyboard_state[settings.keybinds.control_map.at(UP).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.UP = 0;
-        }
-        if (state.keyboard_state[settings.keybinds.control_map.at(DOWN).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.DOWN = 0;
-        }
-        if (state.keyboard_state[settings.keybinds.control_map.at(A).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.A = 0;
-        }
-        if (state.keyboard_state[settings.keybinds.control_map.at(B).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.B = 0;
-        }
-        if (state.keyboard_state[settings.keybinds.control_map.at(L).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.L = 0;
-        }
-        if (state.keyboard_state[settings.keybinds.control_map.at(R).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.R = 0;
-        }
-        if (state.keyboard_state[settings.keybinds.control_map.at(SELECT).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.SELECT = 0;
-        }
-        if (state.keyboard_state[settings.keybinds.control_map.at(START).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.START = 0;
-        }
+        /*
+              case SDL_EVENT_KEY_DOWN: {
+                if (state.keyboard_state[settings.keybinds.control_map.at(RIGHT).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.RIGHT = 0;
+                }
+                if (state.keyboard_state[settings.keybinds.control_map.at(LEFT).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.LEFT = 0;
+                }
+                if (state.keyboard_state[settings.keybinds.control_map.at(UP).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.UP = 0;
+                }
+                if (state.keyboard_state[settings.keybinds.control_map.at(DOWN).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.DOWN = 0;
+                }
+                if (state.keyboard_state[settings.keybinds.control_map.at(A).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.A = 0;
+                }
+                if (state.keyboard_state[settings.keybinds.control_map.at(B).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.B = 0;
+                }
+                if (state.keyboard_state[settings.keybinds.control_map.at(L).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.L = 0;
+                }
+                if (state.keyboard_state[settings.keybinds.control_map.at(R).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.R = 0;
+                }
+                if (state.keyboard_state[settings.keybinds.control_map.at(SELECT).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.SELECT = 0;
+                }
+                if (state.keyboard_state[settings.keybinds.control_map.at(START).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.START = 0;
+                }
 
-        break;
-      }
+                break;
+              }
 
-      case SDL_EVENT_KEY_UP: {
-        if (!state.keyboard_state[settings.keybinds.control_map.at(RIGHT).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.RIGHT = 1;
-        }
-        if (!state.keyboard_state[settings.keybinds.control_map.at(LEFT).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.LEFT = 1;
-        }
-        if (!state.keyboard_state[settings.keybinds.control_map.at(UP).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.UP = 1;
-        }
-        if (!state.keyboard_state[settings.keybinds.control_map.at(DOWN).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.DOWN = 1;
-        }
-        if (!state.keyboard_state[settings.keybinds.control_map.at(A).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.A = 1;
-        }
-        if (!state.keyboard_state[settings.keybinds.control_map.at(B).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.B = 1;
-        }
-        if (!state.keyboard_state[settings.keybinds.control_map.at(L).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.L = 1;
-        }
-        if (!state.keyboard_state[settings.keybinds.control_map.at(R).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.R = 1;
-        }
-        if (!state.keyboard_state[settings.keybinds.control_map.at(SELECT).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.SELECT = 1;
-        }
-        if (!state.keyboard_state[settings.keybinds.control_map.at(START).current_key]) {
-          agb->bus.keypad_input.KEYINPUT.START = 1;
-        }
+              case SDL_EVENT_KEY_UP: {
+                if (!state.keyboard_state[settings.keybinds.control_map.at(RIGHT).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.RIGHT = 1;
+                }
+                if (!state.keyboard_state[settings.keybinds.control_map.at(LEFT).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.LEFT = 1;
+                }
+                if (!state.keyboard_state[settings.keybinds.control_map.at(UP).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.UP = 1;
+                }
+                if (!state.keyboard_state[settings.keybinds.control_map.at(DOWN).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.DOWN = 1;
+                }
+                if (!state.keyboard_state[settings.keybinds.control_map.at(A).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.A = 1;
+                }
+                if (!state.keyboard_state[settings.keybinds.control_map.at(B).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.B = 1;
+                }
+                if (!state.keyboard_state[settings.keybinds.control_map.at(L).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.L = 1;
+                }
+                if (!state.keyboard_state[settings.keybinds.control_map.at(R).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.R = 1;
+                }
+                if (!state.keyboard_state[settings.keybinds.control_map.at(SELECT).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.SELECT = 1;
+                }
+                if (!state.keyboard_state[settings.keybinds.control_map.at(START).current_key]) {
+                  agb->bus.keypad_input.KEYINPUT.START = 1;
+                }
 
-        break;
-      }
+                break;
+              }
 
-      */
+              */
     }
     ImGui_ImplSDL3_ProcessEvent(&event);
   }
@@ -240,20 +240,20 @@ void Frontend::show_memory_viewer() {
 //   ImGui::End();
 // }
 
-
 void Frontend::show_cpu_info() {
   ImGui::Begin("CPU INFO", &state.cpu_info_open, 0);
   const auto& cpu = sys_instance->cell_be;
   ImGui::Columns(2, "Registers");
   for (u8 i = 0; i < 32; i++) {
     if (i % 2 == 0 && i != 0) ImGui::NextColumn();
-    ImGui::Text("%s", fmt::format("r{:d}:   {:#010x}", i, sys_instance->cell_be.ppe.gpr.at(i)).c_str());
+    ImGui::Text("%s", fmt::format("r{:d}:   {:#016x}", i, sys_instance->cell_be.ppe.gpr.at(i)).c_str());
   }
 
   ImGui::Columns(1);
-  ImGui::Text("%s", fmt::format("CIA: {:#010x}", cpu.ppe.cia).c_str());
-  ImGui::Text("%s", fmt::format("NIA: {:#010x}", cpu.ppe.nia).c_str());
-  
+  ImGui::Text("%s", fmt::format("LR: {:#016x}", cpu.ppe.lr).c_str());
+
+  ImGui::Text("%s", fmt::format("CIA: {:#016x}", cpu.ppe.cia).c_str());
+  ImGui::Text("%s", fmt::format("NIA: {:#016x}", cpu.ppe.nia).c_str());
 
   // ImGui::SeparatorText("Branch Delay");
   // ImGui::Text("%s", fmt::format("Enabled: {}", psx->cpu->branch_delay).c_str());
@@ -294,7 +294,6 @@ void Frontend::show_cpu_info() {
 
   ImGui::End();
 }
-
 
 void Frontend::show_menu_bar() {
   if (ImGui::BeginMainMenuBar()) {
@@ -354,7 +353,7 @@ void Frontend::render_frame() {
 
   SDL_SetRenderTarget(renderer, NULL);
   SDL_RenderClear(renderer);
-  
+
   ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(), renderer);
 
   SDL_RenderPresent(renderer);

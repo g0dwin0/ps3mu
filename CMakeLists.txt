@@ -95,8 +95,20 @@ FetchContent_MakeAvailable(spdlog)
 
 #FetchContent_MakeAvailable(capstone)
 
-set(CMAKE_CXX_FLAGS_RELWITHASSERTS "-O2 -g -std=c++23")
-set(CMAKE_C_FLAGS_RELWITHASSERTS "-O2 -g -std=c++23")
+
+
+Include(FetchContent)
+
+FetchContent_Declare(
+  Catch2
+  GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+  GIT_TAG        v3.8.1 # or a later release
+)
+
+FetchContent_MakeAvailable(Catch2)
+
+set(CMAKE_CXX_FLAGS_RELWITHASSERTS "-g -std=c++23")
+set(CMAKE_C_FLAGS_RELWITHASSERTS "-g -std=c++23")
 
 set(CMAKE_EXE_LINKER_FLAGS_RELWITHASSERTS "${CMAKE_EXE_LINKER_FLAGS_RELEASE}")
 set(CMAKE_SHARED_LINKER_FLAGS_RELWITHASSERTS "${CMAKE_SHARED_LINKER_FLAGS_RELEASE}")

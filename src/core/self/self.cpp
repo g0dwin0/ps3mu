@@ -1,6 +1,7 @@
 #include "self/self.hpp"
-#include "vmm/vmm.hpp"
+
 #include "common.hpp"
+#include "vmm/vmm.hpp"
 
 std::string get_section_name_by_sh_name(u16 sh_name, const RawExecutableData& self_data, u64 offset_to_shstrtab) {
   std::string section_name;
@@ -122,15 +123,40 @@ ExecutableInfo parse_self(RawExecutableData& self_data) {
 
 void load_self(RawExecutableData& self_data, const ExecutableInfo& info, std::vector<u8>& memory) {
   u64 offset_to_file = info.cf_header.file_offset;
+
+  // map stack (16mb)
+  if (!vmm.map(0xFFFFFFFFFFF00000, 0x100000)) {
+    FATAL("failed to allocate stack");
+  }
+
+  fmt::println("mapped stack");
+
   for (const auto& phdr : info.program_headers) {
     if (phdr.p_type != PT_LOAD) continue;
+    if (phdr.p_memsz == 0) continue;
 
+
+    fmt::println("load_self: mapping phdr with vaddr: {:#016x}", phdr.p_vaddr);
+
+    u32 n_required_pages = (phdr.p_memsz / PPC64_PAGE_SIZE) + 1;
+
+    fmt::println("mapping {} bytes ({} pages) ", phdr.p_memsz, n_required_pages);
     u64 start = phdr.p_offset + offset_to_file;
 
-// vmm
-    
-    for (size_t i = 0; i < phdr.p_filesz; i++) {
-      memory.at(phdr.p_vaddr + i) = self_data.at(start + i);
+    auto mapping = vmm.map(phdr.p_vaddr, phdr.p_memsz);
+
+    if (!mapping) FATAL("failed to map");
+
+    mapping->print();
+
+    for (size_t file_img_ptr = 0; file_img_ptr < phdr.p_memsz; file_img_ptr++) {
+      // fmt::println("index: {}", (mapping->page_numbers.at(0) * PPC64_PAGE_SIZE) + file_img_ptr);
+      if (file_img_ptr >= phdr.p_filesz) {
+        memory.at((mapping->page_numbers.at(0) * PPC64_PAGE_SIZE) + file_img_ptr) = 0;
+        continue;
+      }
+
+      memory.at((mapping->page_numbers.at(0) * PPC64_PAGE_SIZE) + file_img_ptr) = self_data.at(start + file_img_ptr);
     }
   }
 

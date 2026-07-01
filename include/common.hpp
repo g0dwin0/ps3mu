@@ -1,7 +1,9 @@
 #pragma once
 
 #include <climits>
+#include <string>
 #include <arpa/inet.h>
+#include "common.hpp"
 #include "types.hpp"
 #define CONCAT(x, y) x##y
 #define EXPAND(x, y) CONCAT(x, y)
@@ -9,7 +11,6 @@
 #ifdef __unix
 #define htonll(x) ((((long long)htonl(x)) << 32) + (htonl((x) >> 32)))
 #endif
-
 #include <cassert>
 #include <fstream>
 #include <iterator>
@@ -55,6 +56,10 @@ inline void hexdump(std::vector<u8>& src, size_t len, size_t base) {
   }
 }
 
+inline static void FATAL(const std::string x) {
+  fmt::println("FATAL: {}", x);
+  exit(-1);
+}
 
 template <AccessWidth width>
 inline width read_p_be(width val) {
