@@ -145,6 +145,13 @@ void PPC::mfspr(PPC::InstructionInfo& info, PPE& ppe) {
     default: return;
   }
 }
+
+void PPC::OR(PPC::InstructionInfo& info, PPE& ppe) {
+  ppe.set_reg(info.ra, ppe.get_reg(info.rs) | ppe.get_reg(info.rb));
+
+  if(info.rc) assert(0);
+}
+
 void PPC::mtspr(PPC::InstructionInfo& info, PPE& ppe) {
   SPR spr = (SPR)((info.d >> 5) & 0b11111);
 

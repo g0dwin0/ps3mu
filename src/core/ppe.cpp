@@ -80,9 +80,44 @@ void PPE::execute(PPC::InstructionInfo& info) {
       break;
     }
 
+    case 30: {
+      // FATAL("not implemented");
+
+      u8 instruction_bits = PPC::get_bits<u8, u32>(info.full_opcode, {27, 30});
+
+      switch (instruction_bits) {
+        case 0:
+        case 1: {  // rldicl
+          break;
+        }
+
+        case 2:
+        case 3: {  // rldicr
+          break;
+        }
+
+        case 4:
+        case 5: {  // rldic
+          break;
+        }
+
+        case 6:
+        case 7: {  // rldimi
+          break;
+        }
+
+        case 8:
+        case 9: {  // rldcl
+          break;
+        }
+
+        default: assert(0);
+      }
+      break;
+    }
     case 31: {
       u16 instruction_bits = PPC::get_bits<u16, u32>(info.full_opcode, {21, 30});
-      
+
       switch (instruction_bits) {
         case 339: {
           PPC::mfspr(info, *this);
@@ -91,6 +126,11 @@ void PPE::execute(PPC::InstructionInfo& info) {
 
         case 467: {
           PPC::mtspr(info, *this);
+          break;
+        }
+
+        case 444: {
+          PPC::OR(info, *this);
           break;
         }
 
@@ -130,38 +170,43 @@ void PPE::execute(PPC::InstructionInfo& info) {
 constexpr u8 STORE_DOUBLEWORD = 0x3E;
 
 void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
-  fmt::println("decoding: {:#08x}", op);
-
-  // spdlog::info("opcd: {:#010b}", op);
-  // spdlog::info("get_bits_result: {}", get_bits<u32>(op, {0, 6}));
-  // spdlog::info("get_bits_result: {}", get_bits<u32>(op, {6, 11}));
-
-  // spdlog::info("opcd: {:#010b}", op);
-  // op = read_p_be<u32>(op);
-  // first establish which format is used
-  // spdlog::info("opcd: {:#010b}", op);
-  // spdlog::info("opcd: {:#010x}", (op >> 2) & 0x3f);
-  // spdlog::info("rt: {:#010x}", (op >> 4) & 0x3f);
-  // spdlog::info("ra: {:#010x}", (op & 0x3f) >> 2);
-  // spdlog::info("xo: {:#010x}", (op & 0x3f) >> 2);
-
   u8 opcd = PPC::get_bits<u8, u32>(op, {0, 5});
+
+  fmt::println("decoding: {:#08x}", op);
   fmt::println("opcd: {:#010x} - {}", opcd, opcd);
-  instruction_info.opcode = opcd;
+
+  instruction_info.opcode      = opcd;
   instruction_info.full_opcode = op;
-  
-  // spdlog::info("x: {:#010x}", opcd);
 
   PPC::InstructionFormat format = PPC::InstructionFormat::UNDEFINED;
 
-  if (opcd != 31) {  // check if not ext op
-    format = PPC::opcode_info_map.at(opcd).instruction_format;
-    fmt::println("format: {}", PPC::instruction_format_str_map.at(format));
-  } else {  // if ext op, determine format from instruction bits
-    u16 instruction_bits = PPC::get_bits<u16, u32>(op, {21, 30});
-    fmt::println("instruction bits: {}", instruction_bits);
-    format = PPC::ext_op_31_opcode_info_map.at(instruction_bits).instruction_format;
-    fmt::println("format: {}", PPC::instruction_format_str_map.at(format));
+  switch (opcd) {
+    case 30: {
+      u8 instruction_bits = PPC::get_bits<u8, u32>(op, {27, 30});
+      fmt::println("instruction bits: {}", instruction_bits);
+
+      if (instruction_bits <= 7) {
+        format = PPC::InstructionFormat::MD_FORM;
+      } else {
+        format = PPC::InstructionFormat::MDS_FORM;
+      }
+
+      fmt::println("format: {}", PPC::instruction_format_str_map.at(format));
+      break;
+    }
+    case 31: {
+      u16 instruction_bits = PPC::get_bits<u16, u32>(op, {21, 30});
+      fmt::println("instruction bits: {}", instruction_bits);
+      format = PPC::ext_op_31_opcode_info_map.at(instruction_bits).instruction_format;
+      fmt::println("format: {}", PPC::instruction_format_str_map.at(format));
+      break;
+    }
+
+    default: {
+      format = PPC::opcode_info_map.at(opcd).instruction_format;
+      fmt::println("format: {}", PPC::instruction_format_str_map.at(format));
+      break;
+    }
   }
 
   switch (format) {
@@ -231,6 +276,16 @@ void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
           break;
         }
 
+        case 36: {
+          instruction_info.mnemnonic = fmt::format("stw r{},{:#04x}(r{})", instruction_info.rs, instruction_info.d, instruction_info.ra);
+          break;
+        }
+        case 37: {
+          instruction_info.mnemnonic = fmt::format("stwu r{},{:#04x}(r{})", instruction_info.rs, instruction_info.d, instruction_info.ra);
+          break;
+        }
+        
+
         default: {
           spdlog::error("no decoding logic for opcode: {}", opcd);
           assert(0);
@@ -273,8 +328,13 @@ void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
       break;
     }
     case PPC::InstructionFormat::MD_FORM: {
-      assert(0);
-      exit(-1);
+      instruction_info.rs = PPC::get_bits<u8, u32>(op, {6, 10});
+      instruction_info.ra = PPC::get_bits<u8, u32>(op, {11, 15});
+      instruction_info.sh = PPC::get_bits<u16, u32>(op, {21, 30});
+      instruction_info.mb = instruction_info.me = PPC::get_bits<u8, u32>(op, {21, 26});
+      instruction_info.xo                       = PPC::get_bits<u8, u32>(op, {27, 27});
+      instruction_info.rb = instruction_info.rb = instruction_info.rb = PPC::get_bits<u8, u32>(op, {16, 20});
+
       break;
     }
     case PPC::InstructionFormat::MDS_FORM: {
@@ -283,8 +343,19 @@ void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
       break;
     }
     case PPC::InstructionFormat::X_FORM: {
-      assert(0);
-      exit(-1);
+      instruction_info.rt = instruction_info.rs = instruction_info.to = instruction_info.frt = instruction_info.frs = PPC::get_bits<u8, u32>(op, {6, 10});
+      instruction_info.bf                                                                                           = PPC::get_bits<u8, u32>(op, {6, 8});
+      instruction_info.xo                                                                                           = PPC::get_bits<u16, u32>(op, {21, 30});
+      instruction_info.rc                                                                                           = PPC::get_bits<u8, u32>(op, {31, 31});
+      instruction_info.ra = instruction_info.fra = instruction_info.rb = PPC::get_bits<u8, u32>(op, {11, 15});
+      instruction_info.rb = instruction_info.rb = instruction_info.rb = PPC::get_bits<u8, u32>(op, {16, 20});
+
+      if (instruction_info.xo == 444) {
+        instruction_info.mnemnonic = fmt::format("or{} r{},r{},r{}", instruction_info.rc ? "." : "", instruction_info.ra, instruction_info.rs, instruction_info.rb);
+      } else {
+        assert(0);
+      }
+
       break;
     }
     case PPC::InstructionFormat::XL_FORM: {

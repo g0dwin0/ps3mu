@@ -107,9 +107,9 @@ namespace PPC {
       {0x21,            {"lwzu", InstructionFormat::UNDEFINED}},
       {0x22,                {"lbz", InstructionFormat::D_FORM}},
       {0x23,               {"lbzu", InstructionFormat::D_FORM}},
-      {0x24,             {"stw", InstructionFormat::UNDEFINED}},
-      {0x25,            {"stwu", InstructionFormat::UNDEFINED}},
-      {0x26,             {"stb", InstructionFormat::UNDEFINED}},
+      {0x24,             {"stw", InstructionFormat::D_FORM}},
+      {0x25,            {"stwu", InstructionFormat::D_FORM}},
+      {0x26,             {"stb", InstructionFormat::D_FORM}},
       {0x27,               {"stbu", InstructionFormat::D_FORM}},
       {0x28,                {"lhz", InstructionFormat::D_FORM}},
       {0x29,               {"lhzu", InstructionFormat::D_FORM}},
@@ -139,7 +139,7 @@ namespace PPC {
       {266, {"add", InstructionFormat::XO_FORM}},
       {467, {"mtspr", InstructionFormat::XFX_FORM}},
       {339, {"mfspr", InstructionFormat::XFX_FORM}},
-      
+      {444, {"or", InstructionFormat::X_FORM}},
   };
 
   void tdi(PPC::InstructionInfo&, PPE& ppe);
@@ -158,6 +158,7 @@ namespace PPC {
   void b(PPC::InstructionInfo&, PPE& ppe);
   void rlwimi(PPC::InstructionInfo&, PPE& ppe);
   void rlwinm(PPC::InstructionInfo&, PPE& ppe);
+  void OR(PPC::InstructionInfo&, PPE& ppe);
   void ori(PPC::InstructionInfo&, PPE& ppe);
   void oris(PPC::InstructionInfo&, PPE& ppe);
   void xori(PPC::InstructionInfo&, PPE& ppe);
