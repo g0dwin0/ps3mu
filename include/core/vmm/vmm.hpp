@@ -37,6 +37,7 @@ struct VMM {
     assert((page_size & (page_size - 1)) == 0);
     page_size = page_sz;
     vmm_logger->set_pattern("vmm: %v");
+    vmm_logger->set_level(spdlog::level::off);
     vmm_logger->info("hello from VMM :-)");
   };
 

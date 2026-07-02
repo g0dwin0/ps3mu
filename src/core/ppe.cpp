@@ -212,7 +212,7 @@ void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
   switch (format) {
     case PPC::InstructionFormat::I_FORM: {
       fmt::println("decoding I_FORM instruction");
-      instruction_info.li = PPC::get_bits<u8, u32>(op, {6, 29});
+      instruction_info.li = PPC::get_bits<u32, u32>(op, {6, 29});
       instruction_info.aa = PPC::get_bits<u8, u32>(op, {30, 30});
       instruction_info.lk = PPC::get_bits<u8, u32>(op, {31, 31});
       u8 branch_form      = PPC::get_bits<u8, u32>(op, {30, 31});
@@ -244,7 +244,7 @@ void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
       fmt::println("decoding D_FORM instruction");
       instruction_info.rt = instruction_info.rs = instruction_info.to = instruction_info.frt = instruction_info.frs = PPC::get_bits<u8, u32>(op, {6, 10});
       instruction_info.ra                                                                                           = PPC::get_bits<u8, u32>(op, {11, 15});
-      instruction_info.d = instruction_info.si = instruction_info.ui = PPC::get_bits<u8, u32>(op, {16, 31});
+      instruction_info.d = instruction_info.si = instruction_info.ui = PPC::get_bits<u16, u32>(op, {16, 31});
 
       switch (opcd) {
         case ADDI: {
@@ -267,7 +267,7 @@ void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
         }
 
         case 32: {
-          instruction_info.mnemnonic = fmt::format("lwz r{},{:#04x}(r{})", instruction_info.rt, instruction_info.d, instruction_info.ra);
+          instruction_info.mnemnonic = fmt::format("lwz r{},{:#04x}(r{})", instruction_info.rt, (i16)instruction_info.d, instruction_info.ra);
           break;
         }
 

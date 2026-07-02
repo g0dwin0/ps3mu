@@ -15,7 +15,8 @@ struct Bus {
   
   template <AccessWidth Width>
   [[nodiscard]] Width read(u32 _address) {
-    Width r = *(Width*)&memory.at(_address);
+    fmt::println("{:#016x}", vmm.virt_to_phys(_address));
+    Width r = *(Width*)&memory.at(vmm.virt_to_phys(_address));
 
     if constexpr (sizeof(Width) == 2) {
       r = htons(r);
