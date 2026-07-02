@@ -1,6 +1,7 @@
 #include "self/self.hpp"
 
 #include "common.hpp"
+#include "nid/nid.hpp"
 #include "vmm/vmm.hpp"
 
 std::string get_section_name_by_sh_name(u16 sh_name, const RawExecutableData& self_data, u64 offset_to_shstrtab) {
@@ -135,7 +136,6 @@ void load_self(RawExecutableData& self_data, const ExecutableInfo& info, std::ve
     if (phdr.p_type != PT_LOAD) continue;
     if (phdr.p_memsz == 0) continue;
 
-
     fmt::println("load_self: mapping phdr with vaddr: {:#016x}", phdr.p_vaddr);
 
     u32 n_required_pages = (phdr.p_memsz / PPC64_PAGE_SIZE) + 1;
@@ -161,4 +161,30 @@ void load_self(RawExecutableData& self_data, const ExecutableInfo& info, std::ve
   }
 
   fmt::println("all segments loaded");
+
+
+  // determine imported modules & stubbed functions
+  for (const auto& phdr : info.program_headers) {
+    if (phdr.p_type != PT_SCE_LICINFO_2) continue;
+    u64 virt_addr = phdr.p_vaddr;
+
+    PRXParam* prx_param = (PRXParam*)(memory.data() + vmm.virt_to_phys(virt_addr));
+    prx_param->print();
+
+    SceLibStub* library = (SceLibStub*)(memory.data() + vmm.virt_to_phys(prx_param->libstubstart));
+
+    char* libname = (char*)(memory.data() + vmm.virt_to_phys(library->p_libname));
+    u32* nid_base = (u32*)(memory.data() + vmm.virt_to_phys(library->p_func_nid_table));
+
+    fmt::println("library name: {}", libname);
+    fmt::println("nid table: {:#016x}", library->p_func_nid_table);
+    fmt::println("number of functions: {}", library->stub_table.nfunc);
+    for(size_t i = 0; i < library->stub_table.nfunc; i++) {
+      u32 nid = htonl(*(nid_base+i));
+      fmt::println("nid[{}]: {:#016x}: {}", i, nid, nid_str_table.at(nid));
+    }
+    return;
+  }
+
+  FATAL("could not find LICINFO_2");
 }

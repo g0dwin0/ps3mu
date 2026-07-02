@@ -1,8 +1,10 @@
 #pragma once
 
+#include <arpa/inet.h>
+
 #include <climits>
 #include <string>
-#include <arpa/inet.h>
+
 #include "common.hpp"
 #include "types.hpp"
 #define CONCAT(x, y) x##y
@@ -75,6 +77,35 @@ inline width read_p_be(width val) {
     r = htonll(val);
   }
 
-
-return r;
+  return r;
 }
+
+template <typename T>
+struct BE {
+  T value;
+
+  BE() = default;
+
+  BE(T v) { *this = v; }
+
+  operator T() const {
+    if constexpr (std::endian::native == std::endian::big) return value;
+    else return std::byteswap(value);
+  }
+
+  constexpr T get() const noexcept { return *this; }
+  
+  BE& operator=(T v) {
+    if constexpr (std::endian::native == std::endian::big) value = v;
+    else value = std::byteswap(v);
+
+    return *this;
+  }
+};
+
+template <typename T>
+struct fmt::formatter<BE<T>> : fmt::formatter<T> {
+    auto format(const BE<T>& v, format_context& ctx) const {
+        return fmt::formatter<T>::format(static_cast<T>(v), ctx);
+    }
+};

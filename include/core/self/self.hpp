@@ -3,7 +3,9 @@
 #include <unordered_map>
 #include <vector>
 
+#include "common.hpp"
 #include "common/defs.hpp"
+#include "spdlog/fmt/bundled/base.h"
 
 // big thank you to the people that contributed to ps3devwiki :-)
 // https://www.psdevwiki.com/ps3/SELF_-_SPRX
@@ -242,6 +244,52 @@ const std::unordered_map<u32, std::string> segment_str_map = {
     {      PT_SCE_PPURELA,       "PT_SCE_PPURELA"},
     {       PT_SCE_SEGSYM,        "PT_SCE_SEGSYM"},
 };
+
+struct PRXParam {
+  BE<u32> size;
+  BE<u32> magic;
+  BE<u32> version;
+  BE<u32> pad0;
+  BE<u32> libentstart;
+  BE<u32> libentend;
+  BE<u32> libstubstart;
+  BE<u32> libstubend;
+  BE<u16> ver;
+  BE<u16> pad1;
+  BE<u32> pad2;
+
+  void print() {
+    fmt::println("magic: {:#016x}", magic);
+    fmt::println("version: {:#016x}", version);
+    fmt::println("libentstart: {:#016x}", libentstart);
+    fmt::println("libentend: {:#016x}", libentend);
+    fmt::println("libstubstart: {:#016x}", libstubstart);
+    fmt::println("libstubend: {:#016x}", libstubend);
+    fmt::println("ver: {:#016x}", ver);
+  }
+};
+
+struct sceKernelLibraryStubTable { // size is 0xC
+BE<u16> size;
+BE<u16> version;
+BE<u16> attribute;
+BE<u16> nfunc;
+BE<u16> nvar;
+BE<u16> ntls;
+};
+
+struct SceLibStub { // sceKernelLibraryStubTable_2C
+  sceKernelLibraryStubTable stub_table;
+  u32 padding;
+  BE<u32> p_libname;
+  BE<u32> p_func_nid_table;
+  BE<u32> p_func_entry_table;
+  BE<u32> p_var_nid_table;
+  BE<u32> p_var_entry_table;
+  BE<u32> p_tls_nid_table;
+  BE<u32> p_tls_entry_table;
+};
+
 struct ExecutableInfo {
   cf_header_t cf_header;
   ext_hdr_t ext_hdr;
