@@ -109,3 +109,7 @@ struct fmt::formatter<BE<T>> : fmt::formatter<T> {
         return fmt::formatter<T>::format(static_cast<T>(v), ctx);
     }
 };
+
+inline u64 MASK(u64 x, u64 y) {
+  return ((1 << (y - x)) - 1) << y;
+}

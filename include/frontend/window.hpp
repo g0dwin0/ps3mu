@@ -12,12 +12,7 @@
 // TODO: add breakpoints in debugger
 
 struct State {
-  SDL_Texture* ppu_texture = nullptr;
-  SDL_Texture* backdrop    = nullptr;
-
-  SDL_Texture* tile_set_texture = nullptr;
-  SDL_Texture* tile_map_texture = nullptr;
-  SDL_Texture* obj_texture      = nullptr;
+  SDL_Texture* gpu_texture = nullptr;
 
   std::array<SDL_Texture*, 4> background_textures{};
   std::array<SDL_Texture*, 4> background_affine_textures{};
@@ -70,7 +65,7 @@ struct Frontend {
   SDL_FRect rect{0, 0, 1280, 720};
 
   constexpr static const SDL_DialogFileFilter filters[] = {
-      {"ROMs", "gba"},
+      {"Executables", "self,elf,bin"},
   };
 
   void init_sdl();
@@ -87,11 +82,7 @@ struct Frontend {
   void shutdown();
   void show_memory_viewer();
   void show_cpu_info();
-  void show_ppu_info();
   void show_controls_menu(bool*);
-  // void show_irq_status();
-  void show_obj();
-  void show_timer_window();
 
   explicit Frontend(SysInstance*);
 
