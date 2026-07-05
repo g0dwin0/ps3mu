@@ -4,22 +4,26 @@
 
 #include "common.hpp"
 #include "common/defs.hpp"
+#include "hle/sysPrxForUser.hpp"
 #include "ppc/parser.hpp"
 #include "ppe.hpp"
+#include "self/self.hpp"
 
-template <typename T>
-T EXTS(T v) {
-  return v;
-}
+// template <typename RetValWidth>
+// RetValWidth EXTS(u64 msb, u64 value) {
+//   bool msb_set = value & (1 << msb);
+
+
+
+  
+//   return (RetValWidth)value;
+// }
 
 void PPC::addi(PPC::InstructionInfo& info, PPE& ppe) {
-  // (void)info;
-  // (void)ppe;
-  fmt::println("HELLO");
   if (info.ra == 0) {
     ppe.gpr.at(info.rt) = info.si;
   } else {
-    assert(0);
+    ppe.gpr.at(info.rt) = ppe.gpr.at(info.ra) + info.si;
   }
 };
 
@@ -56,19 +60,37 @@ void PPC::addic(PPC::InstructionInfo& info, PPE& ppe) {
   (void)ppe;
 };
 void PPC::branch(PPC::InstructionInfo& info, PPE& ppe) {
+  // u64 cur_addr;
   (void)info;
   (void)ppe;
-fmt::println("AA: {}", info.aa);
-fmt::println("LK: {}", info.lk);
+  fmt::println("AA: {}", info.aa);
+  fmt::println("LK: {}", info.lk);
 
   assert(!info.aa && info.lk);
   // if(info.aa) {
   // assume aa = 0, lk = 1
-fmt::println("CIA: {:#016x}", ppe.cia);
-fmt::println("LI: {:#016x}", info.li);
+  fmt::println("CIA: {:#016x}", ppe.cia);
+  fmt::println("LI: {:#016x}", info.li);
+
+  fmt::println("calculated NIA: {:#016x}", ppe.cia + (info.li << 2));
+
+  if (function_map.contains((u64)ppe.cia + (info.li << 2))) {
+    const auto& [function_str, nid, func] = function_map.at((u64)ppe.cia + (info.li << 2));
+
+    fmt::println("{}", function_str);
+
+    if (func == nullptr) {
+      FATAL(fmt::format("{} is not bound to a function", function_str));
+    }
+
+    func(ppe);
+
+    // ppe.gpr[3] = 0;
+    // sys_initialize_tls();
+    return;
+  }
 
   ppe.nia = ppe.cia + (info.li << 2);
-  fmt::println("calculated NIA: {:#016x}", ppe.nia);
 
   if (info.lk) {
     ppe.lr = ppe.cia;
@@ -182,23 +204,34 @@ void PPC::gen_load(PPC::InstructionInfo& info, PPE& ppe) {
   (void)ppe;
 
   switch (info.opcode) {
-    case 32: {
+    case 32:
+    case 58: {
       u64 b  = 0;
       u64 ea = 0;
       if (info.ra != 0) {
         fmt::println("RA = {:#016x}", ppe.gpr.at(info.ra));
         fmt::println("d = {:#016x}", (i16)info.d);
-        
+
         b = ppe.gpr.at(info.ra);
       }
 
       ea = b + (i16)info.d;
-              fmt::println("EA = {:#016x} -> {:#016x}", ea, ppe.bus->read<u32>(ea));
+      fmt::println("EA = {:#016x} -> {:#016x}", ea, ppe.bus->read<u32>(ea));
 
-
-      ppe.gpr.at(info.rt) = (u64)ppe.bus->read<u32>(ea);
+      if (info.opcode == 58) {
+        ppe.gpr.at(info.rt) = (u64)ppe.bus->read<u64>(ea);
+      }
+      if (info.opcode == 32) {
+        ppe.gpr.at(info.rt) = (u64)ppe.bus->read<u32>(ea);
+      }
       break;
     }
+
+      // case 58: {
+      //       u64  ea = b + (i16)info.d;
+
+      //   break;
+      // }
 
     default: {
       fmt::println("no decode logic for: {}", info.opcode);
@@ -231,7 +264,15 @@ void PPC::gen_store(PPC::InstructionInfo& info, PPE& ppe) {
     }
 
     case 62: {
-      u64 ea = ppe.get_reg(info.ra) + (i16)(info.ds << 2);
+      u64 ds = info.ds << 2;
+
+      if ((ds & (1 << 13)) != 0) {  // bit 14 is set, so we sign extend
+        ds |= 0b1111111111111111111111111111111111111111111111111100000000000000;
+        // 11111111111111
+      }
+      fmt::println("DS: {:#016x}", ds);
+
+      u64 ea = ppe.get_reg(info.ra) + ds;
 
       fmt::println("ea: {:#016x}", ea);
 

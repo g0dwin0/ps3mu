@@ -1,10 +1,11 @@
 #include "ppe.hpp"
 
+#include <bit>
+
 #include "common.hpp"
 #include "common/defs.hpp"
 #include "ppc/parser.hpp"
 #include "ppc/ppc.hpp"
-
 u32 PPE::fetch(u64 addr) {
   fmt::println("reading: {:#010x}", addr);
   addr = vmm.virt_to_phys(addr);
@@ -88,26 +89,40 @@ void PPE::execute(PPC::InstructionInfo& info) {
       switch (instruction_bits) {
         case 0:
         case 1: {  // rldicl
+
+          u64 r = std::rotl(get_reg(info.rs), info.sh);
+
+          u64 m = MASK(info.mb, 63);
+
+          set_reg(info.ra, r & m);
+
+          if (instruction_bits == 1) {
+            assert(0);
+          }
           break;
         }
 
         case 2:
         case 3: {  // rldicr
+          assert(0);
           break;
         }
 
         case 4:
         case 5: {  // rldic
+          assert(0);
           break;
         }
 
         case 6:
         case 7: {  // rldimi
+          assert(0);
           break;
         }
 
         case 8:
         case 9: {  // rldcl
+          assert(0);
           break;
         }
 
@@ -115,22 +130,49 @@ void PPE::execute(PPC::InstructionInfo& info) {
       }
       break;
     }
-    case 31: {
+    case FX_EXT_OPS: {
       u16 instruction_bits = PPC::get_bits<u16, u32>(info.full_opcode, {21, 30});
 
       switch (instruction_bits) {
-        case 339: {
+        case MFSPR: {
           PPC::mfspr(info, *this);
           break;
         }
 
-        case 467: {
+        case MTSPR: {
           PPC::mtspr(info, *this);
           break;
         }
 
-        case 444: {
+        case _OR: {
           PPC::OR(info, *this);
+          break;
+        }
+
+        case EXTSW: {
+          assert(0);
+          break;
+        }
+
+          // static constexpr u16 X
+
+        case 32: {
+          u64 a = 0;
+          u64 b = 0;
+
+          if (info.l == 0) {
+            a = get_reg(info.ra) >> 32;
+            b = get_reg(info.rb) >> 32;
+          } else {
+            a = get_reg(info.ra);
+            b = get_reg(info.rb);
+          }
+
+          if (a < b) {
+            cr[bf]
+          }
+
+          assert(0);
           break;
         }
 
@@ -146,7 +188,8 @@ void PPE::execute(PPC::InstructionInfo& info) {
     case 40:
     case 41:
     case 42:
-    case 43: {
+    case 43:
+    case 58: {
       PPC::gen_load(info, *this);
       break;
     };
@@ -172,6 +215,7 @@ constexpr u8 STORE_DOUBLEWORD = 0x3E;
 void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
   u8 opcd = PPC::get_bits<u8, u32>(op, {0, 5});
 
+  fmt::println("NIA: {:#016x}", nia);
   fmt::println("decoding: {:#08x}", op);
   fmt::println("opcd: {:#010x} - {}", opcd, opcd);
 
@@ -190,14 +234,14 @@ void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
       } else {
         format = PPC::InstructionFormat::MDS_FORM;
       }
-
       fmt::println("format: {}", PPC::instruction_format_str_map.at(format));
+
       break;
     }
     case 31: {
       u16 instruction_bits = PPC::get_bits<u16, u32>(op, {21, 30});
       fmt::println("instruction bits: {}", instruction_bits);
-      format = PPC::ext_op_31_opcode_info_map.at(instruction_bits).instruction_format;
+      format = PPC::fx_ext_ops_map.at(instruction_bits).instruction_format;
       fmt::println("format: {}", PPC::instruction_format_str_map.at(format));
       break;
     }
@@ -217,9 +261,9 @@ void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
       instruction_info.lk = PPC::get_bits<u8, u32>(op, {31, 31});
       u8 branch_form      = PPC::get_bits<u8, u32>(op, {30, 31});
 
-      fmt::println("li: {:#016x}", instruction_info.li);
-      fmt::println("aa: {:#016x}", instruction_info.aa);
-      fmt::println("lk: {:#016x}", instruction_info.lk);
+      // fmt::println("li: {:#016x}", instruction_info.li);
+      // fmt::println("aa: {:#016x}", instruction_info.aa);
+      // fmt::println("lk: {:#016x}", instruction_info.lk);
       fmt::println("branch form: {}", PPC::branch_form_type_table.at(branch_form));
 
       break;
@@ -229,15 +273,15 @@ void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
 
       instruction_info.bo = PPC::get_bits<u8, u32>(op, {6, 10});
       instruction_info.bi = PPC::get_bits<u8, u32>(op, {11, 15});
-      instruction_info.bd = PPC::get_bits<u8, u32>(op, {16, 29});
+      instruction_info.bd = PPC::get_bits<u16, u32>(op, {16, 29});
       instruction_info.aa = PPC::get_bits<u8, u32>(op, {30, 30});
       instruction_info.lk = PPC::get_bits<u8, u32>(op, {31, 31});
 
       break;
     }
     case PPC::InstructionFormat::SC_FORM: {
-      assert(0);
-      exit(-1);
+      instruction_info.lev       = PPC::get_bits<u8, u32>(op, {20, 26});
+      instruction_info.mnemnonic = fmt::format("sc {:#04x}", instruction_info.lev);
       break;
     }
     case PPC::InstructionFormat::D_FORM: {
@@ -284,7 +328,6 @@ void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
           instruction_info.mnemnonic = fmt::format("stwu r{},{:#04x}(r{})", instruction_info.rs, instruction_info.d, instruction_info.ra);
           break;
         }
-        
 
         default: {
           spdlog::error("no decoding logic for opcode: {}", opcd);
@@ -324,16 +367,29 @@ void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
       break;
     }
     case PPC::InstructionFormat::M_FORM: {
+      assert(0);
       exit(-1);
       break;
     }
     case PPC::InstructionFormat::MD_FORM: {
       instruction_info.rs = PPC::get_bits<u8, u32>(op, {6, 10});
       instruction_info.ra = PPC::get_bits<u8, u32>(op, {11, 15});
-      instruction_info.sh = PPC::get_bits<u16, u32>(op, {21, 30});
-      instruction_info.mb = instruction_info.me = PPC::get_bits<u8, u32>(op, {21, 26});
-      instruction_info.xo                       = PPC::get_bits<u8, u32>(op, {27, 27});
-      instruction_info.rb = instruction_info.rb = instruction_info.rb = PPC::get_bits<u8, u32>(op, {16, 20});
+      instruction_info.sh = (PPC::get_bits<u8, u32>(op, {30, 30}) << 5) + PPC::get_bits<u8, u32>(op, {16, 20});
+      instruction_info.mb = (PPC::get_bits<u8, u32>(op, {26, 26}) << 5) + PPC::get_bits<u8, u32>(op, {21, 25});
+      instruction_info.xo = PPC::get_bits<u8, u32>(op, {27, 27});
+      instruction_info.rb = PPC::get_bits<u8, u32>(op, {16, 20});
+
+      if (opcd == 30) {
+        u8 instruction_bits = PPC::get_bits<u8, u32>(op, {27, 30});
+
+        switch (instruction_bits) {
+          case 0: {
+            fmt::println("rldicl{} r{},r{},{:#04x},{:#04x}", instruction_info.rc ? "." : "", instruction_info.ra, instruction_info.rs, instruction_info.sh, instruction_info.mb);
+            break;
+          }
+          default: assert(0);
+        }
+      }
 
       break;
     }
@@ -348,12 +404,21 @@ void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
       instruction_info.xo                                                                                           = PPC::get_bits<u16, u32>(op, {21, 30});
       instruction_info.rc                                                                                           = PPC::get_bits<u8, u32>(op, {31, 31});
       instruction_info.ra = instruction_info.fra = instruction_info.rb = PPC::get_bits<u8, u32>(op, {11, 15});
-      instruction_info.rb = instruction_info.rb = instruction_info.rb = PPC::get_bits<u8, u32>(op, {16, 20});
 
-      if (instruction_info.xo == 444) {
-        instruction_info.mnemnonic = fmt::format("or{} r{},r{},r{}", instruction_info.rc ? "." : "", instruction_info.ra, instruction_info.rs, instruction_info.rb);
-      } else {
-        assert(0);
+      instruction_info.rb = PPC::get_bits<u8, u32>(op, {16, 20});
+      instruction_info.l  = PPC::get_bits<u8, u32>(op, {10, 10});
+
+      fmt::println("XO: {}", instruction_info.xo);
+      switch (instruction_info.xo) {
+        case 32: {
+          instruction_info.mnemnonic = fmt::format("cmpl cr{},r{},r{}", instruction_info.bf, instruction_info.l, instruction_info.ra, instruction_info.rb);
+          break;
+        }
+        case 444: {
+          instruction_info.mnemnonic = fmt::format("or{} r{},r{},r{}", instruction_info.rc ? "." : "", instruction_info.ra, instruction_info.rs, instruction_info.rb);
+          break;
+        }
+        default: assert(0 && instruction_info.xo);
       }
 
       break;
@@ -438,3 +503,33 @@ void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
     break;
   }
 };
+
+void PPE::set_bit_cr_reg(u8 cr_n, u8 bit) {
+  assert(bit < 4);
+
+  u8 offset = (cr_n * 4) + bit;
+
+  cr |= (1 << offset);
+}
+
+void PPE::clear_bit_cr_reg(u8 cr_n, u8 bit) {
+  assert(bit < 4);
+
+  u8 offset = (cr_n * 4) + bit;
+
+  cr &= ~(1 << offset);
+}
+
+void PPE::clear_full_cr_reg(u8 cr_n) {
+  switch(cr_n) {
+    case 0: {cr0 = 0; break;}
+    case 1: {cr1 = 0; break;}
+    case 2: {cr2 = 0; break;}
+    case 3: {cr3 = 0; break;}
+    case 4: {cr4 = 0; break;}
+    case 5: {cr5 = 0; break;}
+    case 6: {cr6 = 0; break;}
+    case 7: {cr7 = 0; break;}
+    default: assert(0);
+  }
+}

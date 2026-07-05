@@ -22,7 +22,7 @@ int main(int argc, char** argv) {
   // PPC::InstructionInfo instructionInfo;
 
   std::vector<u8> file = read_file(filename);
-  auto executableInfo  = parse_self(file);
+  auto executableInfo  = parse_exec(file);
 
   SysInstance instance;
 

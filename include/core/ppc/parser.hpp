@@ -34,7 +34,7 @@ namespace PPC {
     bool aa, lk, lev, rc;
     u8 rt, ra, rb, oe, rs, bf, l, frt, frs, to, fra, sh,mb, me;
     u16 d, si, ui, xo;
-    i16 ds;
+    u16 ds;
     u64 li;
     std::string mnemnonic;
   };

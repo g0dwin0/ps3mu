@@ -19,10 +19,4 @@ namespace PPC {
     return x;
   }
 
- 
-
-
-  // void execute(u32 op, InstructionInfo& instruction_info, PPE& ppe) {
-
-  // }
 }  // namespace PPC

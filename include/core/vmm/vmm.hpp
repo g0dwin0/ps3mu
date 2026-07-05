@@ -41,28 +41,26 @@ struct VMM {
     vmm_logger->info("hello from VMM :-)");
   };
 
-  phys_page walk_and_create(u64 virt_addr);
-  phys_page get_next_free_page();
-
-  std::shared_ptr<spdlog::logger> vmm_logger = spdlog::stdout_color_mt("VMM");
-  u32 page_size{};
-
-  // we'll give the emulator about 4gigs
-  std::array<page_in_use, 4_GiB / PPC64_PAGE_SIZE> all_pages{};
+  
   using ThirdLevelTable  = std::unordered_map<u16, u16>;
   using SecondLevelTable = std::unordered_map<u16, ThirdLevelTable*>;
 
+  std::array<page_in_use, 4_GiB / PPC64_PAGE_SIZE> all_pages{};
+  
+  u32 page_size{};
+  std::shared_ptr<spdlog::logger> vmm_logger = spdlog::stdout_color_mt("VMM");  
   std::unordered_map<u16, SecondLevelTable*> first_level_table;  // holds pointers to the bases of a 2nd-level page tables, indexed into using first level
   std::unordered_map<u16, ThirdLevelTable*> second_level_table;  // holds pointers to the bases of a 3rd-level page tables, indexed into second level
+  std::unordered_map<virt_page, phys_page> page_table{};
+  std::vector<VmMapping> mappings;
 
+
+  phys_page walk_and_create(u64 virt_addr);
   std::optional<VmMapping> map(u64 vaddr, u64 size);
   phys_page get_page_number(u64 virt_addr);
-
-  std::unordered_map<virt_page, phys_page> page_table{};
+  phys_page get_next_free_page();
   u64 virt_to_phys(u64 virt_addr);
-
   bool do_page_table_entry(u64 addr, u64 phys_page);
-  std::vector<VmMapping> mappings;
 };
 
 inline VMM vmm{PPC64_PAGE_SIZE};

@@ -62,6 +62,11 @@ static constexpr u8 FP_SINGLE_EXT_OPS = 0x3B;
 static constexpr u8 FX_DS_FORM_STORES = 0x3E;
 static constexpr u8 FP_DOUBLE_EXT_OPS = 0x3F;
 
+static constexpr u16 MFSPR = 339;
+static constexpr u16 MTSPR = 467;
+static constexpr u16 _OR   = 444;
+static constexpr u16 EXTSW = 986;
+
 namespace PPC {
 
   struct OpcodeInfo {
@@ -107,9 +112,9 @@ namespace PPC {
       {0x21,            {"lwzu", InstructionFormat::UNDEFINED}},
       {0x22,                {"lbz", InstructionFormat::D_FORM}},
       {0x23,               {"lbzu", InstructionFormat::D_FORM}},
-      {0x24,             {"stw", InstructionFormat::D_FORM}},
-      {0x25,            {"stwu", InstructionFormat::D_FORM}},
-      {0x26,             {"stb", InstructionFormat::D_FORM}},
+      {0x24,                {"stw", InstructionFormat::D_FORM}},
+      {0x25,               {"stwu", InstructionFormat::D_FORM}},
+      {0x26,                {"stb", InstructionFormat::D_FORM}},
       {0x27,               {"stbu", InstructionFormat::D_FORM}},
       {0x28,                {"lhz", InstructionFormat::D_FORM}},
       {0x29,               {"lhzu", InstructionFormat::D_FORM}},
@@ -133,13 +138,17 @@ namespace PPC {
       {0x3F,  {"FP_DOUBLE_EXT_OPS", InstructionFormat::D_FORM}},
   };
 
-  const std::unordered_map<u16, OpcodeInfo> ext_op_31_opcode_info_map = {
-      {0x0,  {"cmp", InstructionFormat::X_FORM}},
-      {138, {"add", InstructionFormat::XO_FORM}},
-      {266, {"add", InstructionFormat::XO_FORM}},
-      {467, {"mtspr", InstructionFormat::XFX_FORM}},
-      {339, {"mfspr", InstructionFormat::XFX_FORM}},
-      {444, {"or", InstructionFormat::X_FORM}},
+  const std::unordered_map<u16, OpcodeInfo> fx_ext_ops_map = {
+      {  0x0,     {"cmp", InstructionFormat::X_FORM}},
+      {   32,    {"cmpl", InstructionFormat::X_FORM}},
+      {   40,   {"subf", InstructionFormat::XO_FORM}},
+      {  138,    {"add", InstructionFormat::XO_FORM}},
+      {  266,    {"add", InstructionFormat::XO_FORM}},
+      {MTSPR, {"mtspr", InstructionFormat::XFX_FORM}},
+      {MFSPR, {"mfspr", InstructionFormat::XFX_FORM}},
+      {  _OR,      {"or", InstructionFormat::X_FORM}},
+
+      {EXTSW,   {"extsw", InstructionFormat::X_FORM}},
   };
 
   void tdi(PPC::InstructionInfo&, PPE& ppe);
@@ -151,7 +160,7 @@ namespace PPC {
   void cmpi(PPC::InstructionInfo&, PPE& ppe);
   void addic(PPC::InstructionInfo&, PPE& ppe);
   void branch(PPC::InstructionInfo&, PPE& ppe);
-  
+
   void addi(PPC::InstructionInfo&, PPE& ppe);
   void bc(PPC::InstructionInfo&, PPE& ppe);
   void sc(PPC::InstructionInfo&, PPE& ppe);
@@ -170,8 +179,6 @@ namespace PPC {
   void gen_store(PPC::InstructionInfo&, PPE& ppe);
   void mtspr(PPC::InstructionInfo&, PPE& ppe);
   void mfspr(PPC::InstructionInfo&, PPE& ppe);
-  
-  
 
   template <typename RetValWidth, typename InputWidth>
   RetValWidth get_bits(u32 n, std::pair<u8, u8> be_range) {

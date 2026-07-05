@@ -74,6 +74,11 @@ struct PPE {
   void decode(u32 op, PPC::InstructionInfo& instruction_info);
   void step();
   void execute(PPC::InstructionInfo&);
+  void set_bit_cr_reg(u8 cr_n, u8 bit);
+  void clear_bit_cr_reg(u8 cr_n, u8 bit);
+  void clear_full_cr_reg(u8 cr_n);
+  
+
   union {
     u32 cr{};
 
