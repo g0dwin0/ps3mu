@@ -168,8 +168,16 @@ void PPE::execute(PPC::InstructionInfo& info) {
             b = get_reg(info.rb);
           }
 
+          if (a > b) {
+            set_bit_cr_reg(info.bf, 0);
+          }
+          
           if (a < b) {
-            cr[bf]
+            set_bit_cr_reg(info.bf, 1);
+          }
+
+          if (a == b) {
+            set_bit_cr_reg(info.bf, 2);
           }
 
           assert(0);
@@ -504,10 +512,10 @@ void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
   }
 };
 
-void PPE::set_bit_cr_reg(u8 cr_n, u8 bit) {
+void PPE::set_bit_cr_reg(u8 cr_n, CR_FIELD bit) {
   assert(bit < 4);
 
-  u8 offset = (cr_n * 4) + bit;
+  u8 offset = (cr_n * 4) + (u8)bit;
 
   cr |= (1 << offset);
 }
@@ -521,15 +529,39 @@ void PPE::clear_bit_cr_reg(u8 cr_n, u8 bit) {
 }
 
 void PPE::clear_full_cr_reg(u8 cr_n) {
-  switch(cr_n) {
-    case 0: {cr0 = 0; break;}
-    case 1: {cr1 = 0; break;}
-    case 2: {cr2 = 0; break;}
-    case 3: {cr3 = 0; break;}
-    case 4: {cr4 = 0; break;}
-    case 5: {cr5 = 0; break;}
-    case 6: {cr6 = 0; break;}
-    case 7: {cr7 = 0; break;}
+  switch (cr_n) {
+    case 0: {
+      cr0 = 0;
+      break;
+    }
+    case 1: {
+      cr1 = 0;
+      break;
+    }
+    case 2: {
+      cr2 = 0;
+      break;
+    }
+    case 3: {
+      cr3 = 0;
+      break;
+    }
+    case 4: {
+      cr4 = 0;
+      break;
+    }
+    case 5: {
+      cr5 = 0;
+      break;
+    }
+    case 6: {
+      cr6 = 0;
+      break;
+    }
+    case 7: {
+      cr7 = 0;
+      break;
+    }
     default: assert(0);
   }
 }
