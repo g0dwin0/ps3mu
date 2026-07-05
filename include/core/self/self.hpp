@@ -1,14 +1,20 @@
 #pragma once
+#include <functional>
 #include <string>
 #include <unordered_map>
 #include <vector>
 
 #include "common.hpp"
 #include "common/defs.hpp"
+#include "ppe.hpp"
 #include "spdlog/fmt/bundled/base.h"
+static constexpr u32 VERSION_PS3  = 2;
+static constexpr u32 VERSION_VITA = 3;
 
 // big thank you to the people that contributed to ps3devwiki :-)
 // https://www.psdevwiki.com/ps3/SELF_-_SPRX
+
+enum ExecutableFileFormat { SELF, ELF };
 
 using Elf64_Addr   = uint64_t;
 using Elf64_Half   = uint16_t;
@@ -18,6 +24,8 @@ using Elf64_Sxword = int64_t;
 using Elf64_Word   = uint32_t;
 using Elf64_Lword  = uint64_t;
 using Elf64_Xword  = uint64_t;
+
+typedef void (*FuncPtr)(PPE&);
 
 // https://www.psdevwiki.com/ps3/SELF_-_SPRX#SCE_specific_ELF_types_(e_type)
 // SCE-specific definitions for e_type:
@@ -89,15 +97,16 @@ static constexpr u32 SHT_GROUP         = 0x11;
 static constexpr u32 SHT_SYMTAB_SHNDX  = 0x12;
 static constexpr u32 SHT_NUM           = 0x13;
 
-static constexpr u32 PF_X     = 0x1;
-static constexpr u32 PF_W     = 0x2;
-static constexpr u32 PF_R     = 0x4;
-static constexpr u32 PF_SPU_X = 0x00100000;
-static constexpr u32 PF_SPU_W = 0x00200000;
-static constexpr u32 PF_SPU_R = 0x00400000;
-static constexpr u32 PF_RSX_X = 0x01000000;
-static constexpr u32 PF_RSX_W = 0x02000000;
-static constexpr u32 PF_RSX_R = 0x04000000;
+static constexpr u32 PF_X          = 0x1;
+static constexpr u32 PF_W          = 0x2;
+static constexpr u32 PF_R          = 0x4;
+static constexpr u32 PF_SPU_X      = 0x00100000;
+static constexpr u32 PF_SPU_W      = 0x00200000;
+static constexpr u32 PF_SPU_R      = 0x00400000;
+static constexpr u32 PF_RSX_X      = 0x01000000;
+static constexpr u32 PF_RSX_W      = 0x02000000;
+static constexpr u32 PF_RSX_R      = 0x04000000;
+static constexpr size_t ENTRY_SIZE = 0x2C;
 
 struct elf_header_t {
   u8 e_ident[16];
@@ -269,16 +278,16 @@ struct PRXParam {
   }
 };
 
-struct sceKernelLibraryStubTable { // size is 0xC
-BE<u16> size;
-BE<u16> version;
-BE<u16> attribute;
-BE<u16> nfunc;
-BE<u16> nvar;
-BE<u16> ntls;
+struct sceKernelLibraryStubTable {  // size is 0xC
+  BE<u16> size;
+  BE<u16> version;
+  BE<u16> attribute;
+  BE<u16> nfunc;
+  BE<u16> nvar;
+  BE<u16> ntls;
 };
 
-struct SceLibStub { // sceKernelLibraryStubTable_2C
+struct SceLibStub {  // sceKernelLibraryStubTable_2C
   sceKernelLibraryStubTable stub_table;
   u32 padding;
   BE<u32> p_libname;
@@ -296,5 +305,11 @@ struct ExecutableInfo {
   elf_header_t elf_header;
   std::vector<Elf64_Phdr> program_headers;
 };
-ExecutableInfo parse_self(RawExecutableData&);
+ExecutableInfo parse_exec(RawExecutableData&);
 void load_self(RawExecutableData& self_data, const ExecutableInfo& info, std::vector<u8>& memory);
+
+// using StubAddress = u64;
+using EntryAddr = u32;
+using NID       = u32;
+
+inline std::unordered_map<EntryAddr, std::tuple<std::string, NID, FuncPtr>> function_map;
