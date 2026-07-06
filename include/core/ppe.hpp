@@ -6,6 +6,9 @@
 #include "common/defs.hpp"
 #include "ppc/parser.hpp"
 
+constexpr u8 STORE_DOUBLEWORD = 0x3E;
+
+
 union FPSCR {
   struct __attribute__((packed)) {
     u8 FX       : 1;
@@ -77,6 +80,7 @@ struct PPE {
   void set_bit_cr_reg(u8 cr_n, u8 bit);
   void clear_bit_cr_reg(u8 cr_n, u8 bit);
   void clear_full_cr_reg(u8 cr_n);
+  bool test_bit_cr_reg(u8 bit);
   
 
   union {

@@ -9,15 +9,19 @@
 #include "ppe.hpp"
 #include "self/self.hpp"
 
-// template <typename RetValWidth>
-// RetValWidth EXTS(u64 msb, u64 value) {
-//   bool msb_set = value & (1 << msb);
-
-
-
+u64 EXTS(u64 msb, u64 value) {
+  u64 masked_retval = value & ((1ULL << msb) - 1);
+  bool msb_set      = (value & (1ULL << msb)) != 0;
   
-//   return (RetValWidth)value;
-// }
+  if (msb_set) {
+    u64 set_bits = U64_MAX << msb;
+    // fmt::println("generated mask:   {:#066b}", set_bits);
+    // fmt::println("pre-retval:       {:#066b}", masked_retval);
+    masked_retval |= set_bits;
+  }
+
+  return masked_retval;
+}
 
 void PPC::addi(PPC::InstructionInfo& info, PPE& ppe) {
   if (info.ra == 0) {
@@ -204,7 +208,7 @@ void PPC::gen_load(PPC::InstructionInfo& info, PPE& ppe) {
   (void)ppe;
 
   switch (info.opcode) {
-    case 32:
+    case LWZ:
     case 58: {
       u64 b  = 0;
       u64 ea = 0;
@@ -221,7 +225,7 @@ void PPC::gen_load(PPC::InstructionInfo& info, PPE& ppe) {
       if (info.opcode == 58) {
         ppe.gpr.at(info.rt) = (u64)ppe.bus->read<u64>(ea);
       }
-      if (info.opcode == 32) {
+      if (info.opcode == LWZ) {
         ppe.gpr.at(info.rt) = (u64)ppe.bus->read<u32>(ea);
       }
       break;

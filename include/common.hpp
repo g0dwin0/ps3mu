@@ -3,10 +3,9 @@
 #include <arpa/inet.h>
 
 #include <climits>
+#include <source_location>
 #include <string>
-
-#include "common.hpp"
-#include "types.hpp"
+#include "common/types.hpp"
 #define CONCAT(x, y) x##y
 #define EXPAND(x, y) CONCAT(x, y)
 #define RESERVED EXPAND(reserved, __LINE__)
@@ -58,8 +57,9 @@ inline void hexdump(std::vector<u8>& src, size_t len, size_t base) {
   }
 }
 
-inline static void FATAL(const std::string x) {
-  fmt::println("FATAL: {}", x);
+inline static void FATAL(const std::string x, const std::source_location location =
+               std::source_location::current()) {
+  fmt::println("FATAL: {} -- {}:{}", x, location.file_name(), location.line());
   exit(-1);
 }
 

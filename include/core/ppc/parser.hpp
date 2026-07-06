@@ -30,11 +30,11 @@ namespace PPC {
   struct InstructionInfo {
     u32 full_opcode;
     u8 opcode;
-    u8 bo, bi, bd;
+    u8 bo, bi;
     bool aa, lk, lev, rc;
     u8 rt, ra, rb, oe, rs, bf, l, frt, frs, to, fra, sh,mb, me;
     u16 d, si, ui, xo;
-    u16 ds;
+    u16 ds, bd;
     u64 li;
     std::string mnemnonic;
   };
