@@ -78,7 +78,7 @@ void PPE::decode(u32 op, PPC::InstructionInfo& instruction_info) {
       u64 target_addr=0;
 
       if(!instruction_info.aa) {
-        target_addr = extinstruction_info.bd << 2;
+        target_addr = instruction_info.bd << 2;
       }
 
       instruction_info.mnemnonic = fmt::format("{} {} {},{:#016x}", instruction_info.mnemnonic, instruction_info.bo, instruction_info.bi, target_addr);

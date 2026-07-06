@@ -4,7 +4,7 @@
 #include <vector>
 #include "common.hpp"
 #include "common/defs.hpp"
-#include "types.hpp"
+#include "common/types.hpp"
 #include "vmm/vmm.hpp"
 
 struct Bus {
