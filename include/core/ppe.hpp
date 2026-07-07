@@ -8,7 +8,6 @@
 
 constexpr u8 STORE_DOUBLEWORD = 0x3E;
 
-
 union FPSCR {
   struct __attribute__((packed)) {
     u8 FX       : 1;
@@ -81,7 +80,6 @@ struct PPE {
   void clear_bit_cr_reg(u8 cr_n, u8 bit);
   void clear_full_cr_reg(u8 cr_n);
   bool test_bit_cr_reg(u8 bit);
-  
 
   union {
     u32 cr{};
@@ -97,4 +95,6 @@ struct PPE {
       u8 cr7 : 4;
     };
   };
+
+  bool check_branch_condition(u8 BO, u8 BI);
 };

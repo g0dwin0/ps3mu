@@ -78,6 +78,7 @@ void Frontend::show_cpu_info() {
   }
 
   ImGui::Columns(1);
+  ImGui::Text("%s", fmt::format("CTR", cpu.ppe.ctr).c_str());
   ImGui::Text("%s", fmt::format("LR: {:#016x}", cpu.ppe.lr).c_str());
 
   ImGui::Text("%s", fmt::format("CIA: {:#016x}", cpu.ppe.cia).c_str());

@@ -4138,7 +4138,7 @@ const std::unordered_map<u32, std::pair<std::string, FuncPtr>> nid_table = {
 {0xF1446A40, {"cellSailPlayerSetEsVideoMuted", nullptr}},
 {0x345579CF, {"scePS2McIconSys_Attribute", nullptr}},
 {0xCCE0FADA, {"_ZN3paf13PhApplication15SetCustomRenderEPFvPS0_E", nullptr}},
-{0x2F85C0EF, {"sys_lwmutex_create", nullptr}},
+{0x2F85C0EF, {"sys_lwmutex_create", sys_lwmutex_create}},
 {0x3261DE11, {"fesetexceptflag", nullptr}},
 {0x07924359, {"cellSailPlayerCloseEsVideo", nullptr}},
 {0xA73BF47E, {"_cellSpursWorkloadFlagReceiver", nullptr}},

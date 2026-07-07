@@ -5,6 +5,7 @@
 #include <climits>
 #include <source_location>
 #include <string>
+
 #include "common/types.hpp"
 #define CONCAT(x, y) x##y
 #define EXPAND(x, y) CONCAT(x, y)
@@ -57,8 +58,7 @@ inline void hexdump(std::vector<u8>& src, size_t len, size_t base) {
   }
 }
 
-inline static void FATAL(const std::string x, const std::source_location location =
-               std::source_location::current()) {
+inline static void FATAL(const std::string x = "unhandled", const std::source_location location = std::source_location::current()) {
   fmt::println("FATAL: {} -- {}:{}", x, location.file_name(), location.line());
   exit(-1);
 }
@@ -94,7 +94,7 @@ struct BE {
   }
 
   constexpr T get() const noexcept { return *this; }
-  
+
   BE& operator=(T v) {
     if constexpr (std::endian::native == std::endian::big) value = v;
     else value = std::byteswap(v);
@@ -105,11 +105,30 @@ struct BE {
 
 template <typename T>
 struct fmt::formatter<BE<T>> : fmt::formatter<T> {
-    auto format(const BE<T>& v, format_context& ctx) const {
-        return fmt::formatter<T>::format(static_cast<T>(v), ctx);
-    }
+  auto format(const BE<T>& v, format_context& ctx) const { return fmt::formatter<T>::format(static_cast<T>(v), ctx); }
 };
 
 inline u64 MASK(u64 x, u64 y) {
-  return ((1 << (y - x)) - 1) << y;
+  u64 mask = U64_MAX;
+  u8 tb    = 64 - (y + 1);
+
+  mask <<= tb;
+  mask >>= x;
+  return mask;
+  // return ((1 << (y - x)) - 1);
+}
+
+// 00000000100000000000000000000000
+inline u64 EXTS(u64 msb, u64 value) {
+  u64 masked_retval = value & ((1ULL << msb) - 1);
+  bool msb_set      = (value & (1ULL << msb)) != 0;
+
+  if (msb_set) {
+    u64 set_bits = U64_MAX << msb;
+    // fmt::println("generated mask:   {:#066b}", set_bits);
+    // fmt::println("pre-retval:       {:#066b}", masked_retval);
+    masked_retval |= set_bits;
+  }
+
+  return masked_retval;
 }

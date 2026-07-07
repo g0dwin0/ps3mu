@@ -28,14 +28,17 @@ namespace PPC {
       {InstructionFormat::UNDEFINED, "UNDEFINED"},
   };
   struct InstructionInfo {
+    u64 address;
+    u64 target_addr;
+
     u32 full_opcode;
     u8 opcode;
     u8 bo, bi;
     bool aa, lk, lev, rc;
-    u8 rt, ra, rb, oe, rs, bf, l, frt, frs, to, fra, sh,mb, me;
-    u16 d, si, ui, xo;
-    u16 ds, bd;
-    u64 li;
+    u8 rt, ra, rb, oe, rs, bf, l, frt, frs, to, fra, sh, mb, me;
+    u64 d, si, ui, xo;
+    u16 bd, bh;
+    u64 li, ds;
     std::string mnemnonic;
   };
 

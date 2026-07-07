@@ -162,6 +162,10 @@ namespace PPC {
   void cmpi(PPC::InstructionInfo&, PPE& ppe);
   void addic(PPC::InstructionInfo&, PPE& ppe);
   void branch(PPC::InstructionInfo&, PPE& ppe);
+  void bclr(PPC::InstructionInfo&, PPE& ppe);
+  
+  void branch_conditional(PPC::InstructionInfo&, PPE& ppe);
+  
 
   void addi(PPC::InstructionInfo&, PPE& ppe);
   void bc(PPC::InstructionInfo&, PPE& ppe);
@@ -189,8 +193,9 @@ namespace PPC {
     assert(start <= end);
 
     n = (n >> ((sizeof(InputWidth) * 8) - end - 1));
+    // fmt::println("N: {:#016x} -- shifted out: {}", n, ((sizeof(InputWidth) * 8) - end - 1));
 
-    u16 mask = (1 << (end + 1 - start)) - 1;
+    u32 mask = (1 << (end + 1 - start)) - 1;
 
     if (start != 0) {
       n &= mask;
@@ -200,4 +205,6 @@ namespace PPC {
 
     return n;
   }
+
+  
 }  // namespace PPC
