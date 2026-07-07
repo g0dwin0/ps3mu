@@ -19,26 +19,32 @@ void PPC::addi(PPC::InstructionInfo& info, PPE& ppe) {
 void PPC::tdi(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
+  FATAL();
 };
 void PPC::twi(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
+  FATAL();
 };
 void PPC::mulli(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
+  FATAL();
 };
 void PPC::subfic(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
+  FATAL();
 };
 void PPC::dozi(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
+  FATAL();
 };
 void PPC::cmpli(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
+  FATAL();
 };
 void PPC::cmpi(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
@@ -71,6 +77,7 @@ void PPC::cmpi(PPC::InstructionInfo& info, PPE& ppe) {
 void PPC::addic(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
+  FATAL();
 };
 void PPC::branch(PPC::InstructionInfo& info, PPE& ppe) {
   fmt::println("AA: {}", info.aa);
@@ -176,6 +183,7 @@ void PPC::bclr(PPC::InstructionInfo& info, PPE& ppe) {
 void PPC::bc(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
+  FATAL();
 };
 void PPC::sc(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
@@ -186,10 +194,12 @@ void PPC::sc(PPC::InstructionInfo& info, PPE& ppe) {
 void PPC::b(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
+  FATAL();
 };
 void PPC::rlwimi(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
+  FATAL();
 };
 void PPC::rlwinm(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
@@ -201,6 +211,8 @@ void PPC::rlwinm(PPC::InstructionInfo& info, PPE& ppe) {
   u64 m = MASK(info.mb + 32, info.me + 32);
 
   ppe.set_reg(info.ra, r & m);
+
+  if (info.rc) FATAL();
 };
 void PPC::ori(PPC::InstructionInfo& info, PPE& ppe) {
   u64 or_val = info.ui;
@@ -209,7 +221,7 @@ void PPC::ori(PPC::InstructionInfo& info, PPE& ppe) {
   ppe.gpr.at(info.ra) = (u64)(ppe.gpr.at(info.rs) | or_val);
 };
 void PPC::oris(PPC::InstructionInfo& info, PPE& ppe) {
-  u64 or_val = info.ui << 16;
+  u64 or_val = (info.ui & 0xFFFF) << 16;
   fmt::println("or val: {:#010x}", or_val);
 
   ppe.gpr.at(info.ra) = ppe.gpr.at(info.rs) | or_val;
@@ -217,22 +229,27 @@ void PPC::oris(PPC::InstructionInfo& info, PPE& ppe) {
 void PPC::xori(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
+  FATAL();
 };
 void PPC::xoris(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
+  FATAL();
 };
 void PPC::andi(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
+  FATAL();
 };
 void PPC::andis(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
+  FATAL();
 };
 void PPC::lwz(PPC::InstructionInfo& info, PPE& ppe) {
   (void)info;
   (void)ppe;
+  FATAL();
 };
 void PPC::mfspr(PPC::InstructionInfo& info, PPE& ppe) {
   SPR spr = (SPR)((info.d >> 5) & 0b11111);
@@ -251,14 +268,14 @@ void PPC::mfspr(PPC::InstructionInfo& info, PPE& ppe) {
       break;
     }
 
-    default: return;
+    default: FATAL();
   }
 }
 
 void PPC::OR(PPC::InstructionInfo& info, PPE& ppe) {
   ppe.set_reg(info.ra, ppe.get_reg(info.rs) | ppe.get_reg(info.rb));
 
-  if (info.rc) assert(0);
+  if (info.rc) FATAL();
 }
 
 void PPC::mtspr(PPC::InstructionInfo& info, PPE& ppe) {
@@ -266,15 +283,17 @@ void PPC::mtspr(PPC::InstructionInfo& info, PPE& ppe) {
 
   switch (spr) {
     case SPR::XER: {
-      ppe.xer = ppe.gpr.at(info.rt);
+      ppe.xer = ppe.gpr.at(info.rs);
       break;
     }
     case SPR::LR: {
-      ppe.lr = ppe.gpr.at(info.rt);
+      fmt::println("old LR: {:#016x} new LR:{:#016x}", ppe.lr, ppe.get_reg(info.rs));
+
+      ppe.lr = ppe.gpr.at(info.rs);
       break;
     }
     case SPR::CTR: {
-      ppe.ctr = ppe.gpr.at(info.rt);
+      ppe.ctr = ppe.gpr.at(info.rs);
       break;
     }
 
@@ -329,7 +348,7 @@ void PPC::gen_load(PPC::InstructionInfo& info, PPE& ppe) {
       bool update = PPC::get_bits<u8, u32>(info.full_opcode, {30, 31});
 
       if (update) {
-        ea = ppe.gpr.at(info.ra) + EXTS(13, info.ds << 2);
+        ea = ppe.get_reg(info.ra) + EXTS(13, info.ds << 2);
 
       } else {
         if (info.ra != 0) {
@@ -342,10 +361,10 @@ void PPC::gen_load(PPC::InstructionInfo& info, PPE& ppe) {
       fmt::println("RA:{:#016x}", info.ra);
 
       fmt::println("EA:{:#016x}", ea);
-      ppe.set_reg(info.rt, htonll(ppe.bus->read<u64>(ea)));
+      ppe.set_reg(info.rt, ppe.bus->read<u64>(ea));
 
       if (update) {
-        ppe.set_reg(info.ra, ppe.bus->read<u64>(ea));
+        ppe.set_reg(info.ra, ea);
       }
 
       break;
@@ -393,7 +412,7 @@ void PPC::gen_store(PPC::InstructionInfo& info, PPE& ppe) {
 
       fmt::println("info.d: {:#016x}", info.d);
 
-      ppe.bus->write<u32>(ea, ppe.get_reg(info.rs));
+      ppe.bus->write<u32>(ea, (u32)ppe.get_reg(info.rs));
 
       break;
     }
@@ -411,13 +430,26 @@ void PPC::gen_store(PPC::InstructionInfo& info, PPE& ppe) {
     }
 
     case 62: {  // STD(U)
-      u64 ds = EXTS(13, info.ds << 2);
 
-      u64 ea = ds;
+      if (info.ra == 0) FATAL();
+
+      u64 b = 0;
+      u64 ds = 0;
+      u64 ea =0;
+
+
+
+      ds = EXTS(13, info.ds << 2);
+
 
       if (!info.xo) {
-        ea += info.ra != 0 ? ppe.get_reg(info.ra) : 0;
+        b = info.ra != 0 ? ppe.get_reg(info.ra) : 0;
+      } else {
+        b = ppe.get_reg(info.ra);
       }
+
+      
+      ea = b + ds;
 
       ppe.bus->write<u64>(ea, ppe.get_reg(info.rs));
 
@@ -428,6 +460,6 @@ void PPC::gen_store(PPC::InstructionInfo& info, PPE& ppe) {
       break;
     }
 
-    default: assert(0 && "no valid gen store opcode");
+    default: FATAL("no valid gen store opcode");
   }
 };
