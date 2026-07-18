@@ -1,5 +1,4 @@
 #pragma once
-#include <functional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -8,6 +7,12 @@
 #include "common/defs.hpp"
 #include "ppe.hpp"
 #include "spdlog/fmt/bundled/base.h"
+
+struct FuncEntry {
+  BE<u32> ptr_to_func;
+  u32 padding;
+};
+
 static constexpr u32 VERSION_PS3  = 2;
 static constexpr u32 VERSION_VITA = 3;
 
@@ -287,7 +292,37 @@ struct sceKernelLibraryStubTable {  // size is 0xC
   BE<u16> ntls;
 };
 
+struct sceKernelLibraryEntry {
+  BE<u16> size;
+  BE<u16> version;
+  BE<u16> attribute;
+  BE<u16> nfunc;
+  BE<u16> nvar;
+  BE<u16> ntls;
+
+  BE<u8> hashinfo;
+  BE<u8> hashinfotls;
+  BE<u8> reserved;
+  BE<u8> nidaltsets;
+
+  BE<u32> p_libname;
+  BE<u32> p_nid_table;
+  BE<u32> p_entry_table;
+};
+
 struct SceLibStub {  // sceKernelLibraryStubTable_2C
+  sceKernelLibraryStubTable stub_table;
+  u32 padding;
+  BE<u32> p_libname;
+  BE<u32> p_func_nid_table;
+  BE<u32> p_func_entry_table;
+  BE<u32> p_var_nid_table;
+  BE<u32> p_var_entry_table;
+  BE<u32> p_tls_nid_table;
+  BE<u32> p_tls_entry_table;
+};
+
+struct SceLibEntry {  // sceKernelLibraryEntryTable_1C
   sceKernelLibraryStubTable stub_table;
   u32 padding;
   BE<u32> p_libname;
@@ -311,5 +346,11 @@ void load_self(RawExecutableData& self_data, const ExecutableInfo& info, std::ve
 // using StubAddress = u64;
 using EntryAddr = u32;
 using NID       = u32;
+using TOC       = u64;
 
-inline std::unordered_map<EntryAddr, std::tuple<std::string, NID, FuncPtr>> function_map;
+struct StubMapEntry {
+  std::string name;
+  NID nid;
+  FuncPtr fn_ptr;
+};
+inline std::unordered_map<EntryAddr, StubMapEntry> stub_map;

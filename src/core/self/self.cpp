@@ -3,6 +3,7 @@
 #include "common.hpp"
 #include "nid/nid.hpp"
 #include "ppe.hpp"
+#include "prx/prx.hpp"
 #include "vmm/vmm.hpp"
 
 std::string get_section_name_by_sh_name(u16 sh_name, const RawExecutableData& self_data, u64 offset_to_shstrtab) {
@@ -144,16 +145,8 @@ ExecutableInfo parse_exec(RawExecutableData& self_data) {
 void load_self(RawExecutableData& self_data, const ExecutableInfo& info, std::vector<u8>& memory) {
   u64 offset_to_file = info.cf_header.file_offset;
 
-  // map stack (16mb)
-  if (!vmm.map(0xFFFFFFFFFFF00000, 0x100000)) {
-    FATAL("failed to allocate stack");
-  }
-
-  fmt::println("mapped stack");
-
   for (const auto& phdr : info.program_headers) {
-    if (phdr.p_type != PT_LOAD) continue;
-    if (phdr.p_memsz == 0) continue;
+    if (phdr.p_type != PT_LOAD || phdr.p_memsz == 0) continue;
 
     fmt::println("load_self: mapping phdr with vaddr: {:#016x}", phdr.p_vaddr);
 
@@ -202,19 +195,23 @@ void load_self(RawExecutableData& self_data, const ExecutableInfo& info, std::ve
       fmt::println("nid table: {:#016x}", library->p_func_nid_table);
       fmt::println("func table: {:#016x}", library->p_func_entry_table);
 
-      fmt::println("number of functions: {}", library->stub_table.nfunc);
+      // fmt::println("number of functions: {}", library->stub_table.nfunc);
       for (size_t i = 0; i < library->stub_table.nfunc; i++) {
         u32 nid   = htonl(*(nid_base + i));
         u32 entry = htonl(*(entry_base + i));
 
-        const auto& [func_name, func_impl_ptr] = nid_table.at(nid);
+        const auto& func_name = nid_table_map.at(nid).name;
 
         fmt::println("nid[{}]: {:#016x}: {} - stub addr: {:#016x}", i, nid, func_name, entry);
-        function_map.insert({
-            entry, {func_name, nid, func_impl_ptr}
+
+        stub_map.insert({
+            entry, {func_name, nid, NULL}
         });
       }
+
+      map_module_by_name(libname, memory, library);
     }
+
     return;
   }
 
