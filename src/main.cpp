@@ -18,19 +18,23 @@ int handle_args(int& argc, char** argv, std::string& filename) {
 int main(int argc, char** argv) {
   std::string filename = {};
   handle_args(argc, argv, filename);
-
-  // PPC::InstructionInfo instructionInfo;
+  SysInstance instance;
 
   std::vector<u8> file = read_file(filename);
   auto executableInfo  = parse_exec(file);
 
-  SysInstance instance;
-
   load_self(file, executableInfo, instance.bus.memory);
 
-  fmt::println("e_entry: {:#016x}", executableInfo.elf_header.e_entry);
+  if (!vmm.map(0xFFFFFFFFFFF00000, 0x100000)) {
+    FATAL("failed to allocate stack");
+  }
+  fmt::println("mapped stack");
 
-  u32 entry_point = instance.cell_be.ppe.fetch(executableInfo.elf_header.e_entry);
+  u64 entry_point = instance.cell_be.ppe.fetch(executableInfo.elf_header.e_entry);
+  u32 toc         = instance.cell_be.ppe.fetch(executableInfo.elf_header.e_entry + 4);
+
+  fmt::println("e_entry: {:#016x} toc: {:#016x}", entry_point, toc);
+  instance.cell_be.ppe.set_reg(2, toc);
 
   instance.cell_be.ppe.nia = entry_point;
   instance.cell_be.ppe.cia = entry_point;
@@ -43,13 +47,5 @@ int main(int argc, char** argv) {
   }
 
   f.shutdown();
-
-    // vmm.get_page_number(0x000000ffffff90);
-
-  // vmm.
-  // system.join();
-
-  // 0x000000ffffff90 == 0x0000000
-
   return 0;
 }
