@@ -1,5 +1,5 @@
 #pragma once
-#include "common.hpp"
+#include "common/defs.hpp"
 #include "vmm.hpp"
 
 // identifier for entry in the TLB

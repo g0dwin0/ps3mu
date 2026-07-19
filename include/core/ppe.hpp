@@ -6,9 +6,12 @@
 #include "common/defs.hpp"
 #include "ppc/parser.hpp"
 
-constexpr u8 STORE_DOUBLEWORD = 0x3E;
+enum ShiftDirection {
+  Left, Right
+};
 
 union FPSCR {
+  u32 fpscr;
   struct __attribute__((packed)) {
     u8 FX       : 1;
     u8 FEX      : 1;
@@ -37,7 +40,7 @@ union FPSCR {
     u8 XE       : 1;
     u8 NI       : 1;
     u8 RN       : 2;
-  } FPSCR;
+  };
 };
 
 enum struct SPR : u8 {
@@ -61,12 +64,12 @@ struct PPE {
   FPSCR fpscr{};
   u64 nia{};  // next instruction address (not exposed afaik)
   u64 cia{};  // current instruction address (also not exposed, but used by the fetch unit)
-
+  std::string logs{};
   Bus* bus = nullptr;
 
   PPC::InstructionInfo instruction_info{};
 
-  u32 fetch(u64 addr);
+  u32 fetch(u64 addr) const;
 
   u64& get_reg_ref(u8 reg) { return gpr.at(reg); }
   u64 get_reg(u8 reg) { return gpr.at(reg); }
@@ -76,7 +79,7 @@ struct PPE {
   void decode(u32 op, PPC::InstructionInfo& instruction_info);
   void step();
   void execute(PPC::InstructionInfo&);
-  void set_bit_cr_reg(u8 cr_n, u8 bit);
+  void set_cr_field(u8 cr_n, u8 bit);
   void clear_bit_cr_reg(u8 cr_n, u8 bit);
   void clear_full_cr_reg(u8 cr_n);
   bool test_bit_cr_reg(u8 bit);

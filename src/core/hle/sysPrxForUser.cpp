@@ -1,58 +1,83 @@
-#include "hle/sysPrxForUser.hpp"
+#include "common/defs.hpp"
+#include "lv2/mutex.h"
+#include "ppe.hpp"
 
+void module_prologue(PPE& ppe) { ppe.bus->write<u64>(ppe.gpr[1] + 0x28, ppe.gpr[2]); }
 void sys_initialize_tls(PPE& ppe) {
+  module_prologue(ppe);
+
   fmt::println("sys_initialize_tls() = 0: stubbed");
+
   ppe.gpr[3] = 0;
 }
 
 void sys_ppu_thread_get_id(PPE& ppe) {
-  fmt::println("sys_ppu_thread_get_id() = 0x0B00B135: stubbed");
-  ppe.gpr[3] = 0x0B00B135;
+  module_prologue(ppe);
+  fmt::println("[module] sys_ppu_thread_get_id() = 1: stubbed");
+  ppe.bus->write<u64>(ppe.gpr[3], 0x12345678);
+
+  ppe.gpr[3] = 0;
 }
 
 void sys_prx_register_library(PPE& ppe) {
-  fmt::println("sys_prx_register_library() = 0: stubbed");
+  module_prologue(ppe);
+  fmt::println("[module] sys_prx_register_library() = 0: stubbed");
   ppe.gpr[3] = 0;
 }
 
 void sys_process_atexitspawn(PPE& ppe) {
-  fmt::println("sys_process_atexitspawn() = {}", std::time(0));
+  module_prologue(ppe);
+  fmt::println("[module] sys_process_atexitspawn() = {}", std::time(0));
   ppe.gpr[3] = 0;
 }
 
 void sys_process_at_Exitspawn(PPE& ppe) {
-  fmt::println("sys_process_at_Exitspawn() = {}", std::time(0));
+  module_prologue(ppe);
+  fmt::println("[module] sys_process_at_Exitspawn() = {}", std::time(0));
   ppe.gpr[3] = 0;
 }
 
 void sys_prx_exitspawn_with_level(PPE& ppe) {
-  fmt::println("sys_prx_exitspawn_with_level() = {}", std::time(0));
+  module_prologue(ppe);
+  fmt::println("[module] sys_prx_exitspawn_with_level() = {}", std::time(0));
   ppe.gpr[3] = 0;
 }
 
 void sys_time_get_system_time(PPE& ppe) {
-  fmt::println("sys_time_get_system_time() = {}", std::time(0));
+  module_prologue(ppe);
+  fmt::println("[module] sys_time_get_system_time() = {}", std::time(0));
   ppe.gpr[3] = std::time(0);
 }
 
 void sys_lwmutex_lock(PPE& ppe) {
-    fmt::println("sys_lwmutex_lock(): = {} -- stubbed", 0);
-    ppe.gpr[3] = 0;
+  module_prologue(ppe);
+  fmt::println("[module] sys_lwmutex_lock(): = {} -- stubbed", 0);
+  ppe.gpr[3] = 0;
 };
 void sys_lwmutex_unlock(PPE& ppe) {
-    fmt::println("sys_lwmutex_unlock(): = {} -- stubbed", 0);
-    ppe.gpr[3] = 0;
+  module_prologue(ppe);
+  fmt::println("[module] sys_lwmutex_unlock(): = {} -- stubbed", 0);
+  ppe.gpr[3] = 0;
 };
 void sys_lwmutex_create(PPE& ppe) {
-    fmt::println("sys_lwmutex_create(): = {} -- stubbed", 0);
-    ppe.gpr[3] = 0;
+  module_prologue(ppe);
+  int retval = 0;
+
+  sys_lwmutex_t* sys_lwmutex           = reinterpret_cast<sys_lwmutex_t*>(ppe.bus->memory.data() + vmm.virt_to_phys(ppe.gpr[3]));
+  sys_lwmutex_attr_t* sys_lwmutex_attr = reinterpret_cast<sys_lwmutex_attr_t*>(ppe.bus->memory.data() + vmm.virt_to_phys(ppe.gpr[4]));
+
+  sys_lwmutex->attribute = sys_lwmutex_attr->attr_protocol;
+
+  fmt::println("[module] sys_lwmutex_create(*mutex={:#016x}, *attr={:#016x}) = {}", vmm.virt_to_phys(ppe.gpr[3]), vmm.virt_to_phys(ppe.gpr[4]), retval);
+  ppe.gpr[3] = retval;
 };
 void sys_lwmutex_destroy(PPE& ppe) {
-    fmt::println("sys_lwmutex_destroy(): = {} -- stubbed", 0);
-    ppe.gpr[3] = 0;
+  module_prologue(ppe);
+  fmt::println("[module] sys_lwmutex_destroy(): = {} -- stubbed", 0);
+  ppe.gpr[3] = 0;
 };
 void sys_process_exit(PPE& ppe) {
-    fmt::println("sys_process_exit(): = {} -- stubbed", 0);
-    ppe.gpr[3] = 0;
+  module_prologue(ppe);
+  fmt::println("[module] sys_process_exit(): = {} -- stubbed", 0);
+  ppe.gpr[3] = 0;
 };
-
