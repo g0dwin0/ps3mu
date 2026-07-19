@@ -1,5 +1,6 @@
 #include "ppe.hpp"
 
+#include <algorithm>
 #include <bit>
 
 #include "common.hpp"
@@ -8,31 +9,27 @@
 #include "ppc/ppc.hpp"
 #include "spdlog/fmt/bundled/base.h"
 #include "spdlog/fmt/bundled/format.h"
-u32 PPE::fetch(u64 addr) {
-  fmt::println("CIA: {:#016x} reading: {:#010x}", cia, addr);
+u32 PPE::fetch(u64 addr) const {
   addr = vmm.virt_to_phys(addr);
 
   return read_p_be<u32>(*(u32*)(this->bus->memory.data() + addr));
 }
 
 void PPE::step() {
+  global_step_count++;
   cia                      = nia;
   u64 opcode               = fetch(cia);
   instruction_info.address = cia;
   nia                      = cia + 4;
 
-  if (cia == 0x103B4) {
-    fmt::println("R8: {:#016x}", gpr[8]);
-    fmt::println("R31: {:#016x}", gpr[31]);
-    fmt::println("R10: {:#016x}", gpr[10]);
-    fmt::println("R28: {:#016x}", gpr[28]);
-  }
+  // fmt::println("CIA: {:#016x}", cia);
   decode(opcode, instruction_info);
   execute(instruction_info);
 }
 
 void PPE::execute(PPC::InstructionInfo& info) {
   fmt::println("{:#016x} - {}", info.address, info.mnemnonic);
+
   switch (info.opcode) {
     case 2:
     case 3: {
@@ -57,10 +54,10 @@ void PPE::execute(PPC::InstructionInfo& info) {
       PPC::cmpi(info, *this);
       break;
     }
-    case 12: {
-      PPC::addic(info, *this);
-      break;
-    }
+      // case 12: {
+      //   PPC::addic(info, *this);
+      //   break;
+      // }
 
     case 18: {
       PPC::branch(info, *this);
@@ -69,6 +66,10 @@ void PPE::execute(PPC::InstructionInfo& info) {
 
     case ADDI: {
       PPC::addi(info, *this);
+      break;
+    }
+    case ADDIS: {
+      PPC::addis(info, *this);
       break;
     }
 
@@ -88,52 +89,91 @@ void PPE::execute(PPC::InstructionInfo& info) {
     }
 
     case 30: {
-      // FATAL("not implemented");
+      if (info.rc) FATAL();
+      // u8 instruction_bits = PPC::get_bits<u8, u32>(info.full_opcode, {27, 30});
 
-      u8 instruction_bits = PPC::get_bits<u8, u32>(info.full_opcode, {27, 30});
+      u8 rotate_type = PPC::get_bits<u8, u32>(info.full_opcode, {27, 30});
 
-      switch (instruction_bits) {
+      switch (rotate_type) {
         case 0:
         case 1: {  // rldicl
+
           u64 r = std::rotl(get_reg(info.rs), info.sh);
           fmt::println("sh: {:#06x}", info.sh);
           fmt::println("mb: {:#06x}", info.mb);
 
-          u64 m = MASK(info.mb, 63);
-          // fmt::println("mask: {:#064b} - mb: {}", m, info.mb);
+          u64 m = MASK(0, 63 - info.mb);
+          fmt::println("mask: {:#064b} - mb: {} - res: {}", m, info.mb, r & m);
           set_reg(info.ra, r & m);
-
-          if (instruction_bits == 1) {
-            assert(0);
-          }
           break;
         }
-
         case 2:
         case 3: {  // rldicr
-          assert(0);
+          fmt::println("info.rs: {:#016x}", get_reg(info.rs));
+          fmt::println("info.ra: {:#016x}", get_reg(info.ra));
+          u64 r = std::rotl(get_reg(info.rs), info.sh);
+          fmt::println("sh: {:#06x}", info.sh);
+          fmt::println("me: {:#06x}", info.me);
+
+          u64 m = MASK(63 - info.me, 63);
+          fmt::println("MASK: {:#066b}", m);
+          set_reg(info.ra, r & m);
           break;
         }
 
         case 4:
         case 5: {  // rldic
-          assert(0);
+          fmt::println("info.rs: {:#016x}", get_reg(info.rs));
+          fmt::println("info.ra: {:#016x}", get_reg(info.ra));
+          u64 r = std::rotl(get_reg(info.rs), info.sh);
+          fmt::println("sh: {:#06x}", info.sh);
+          fmt::println("mb: {:#06x}", info.mb);
+
+          u64 m = MASK(info.sh, 63 - info.mb);
+          set_reg(info.ra, r & m);
+          // FATAL();
+
           break;
         }
-
         case 6:
         case 7: {  // rldimi
-          assert(0);
+          u64 r = std::rotl(get_reg(info.rs), info.sh);
+          fmt::println("sh: {:#06x}", info.sh);
+          fmt::println("mb: {:#06x}", info.mb);
+
+          u64 m = MASK(info.sh, 63 - info.mb);
+
+          set_reg(info.ra, (r & m) | (get_reg(info.ra) & (~m)));  // TODO: sus
+
+          if (info.rc) FATAL("RC");
+          fmt::println("post ra: {:#016x}", get_reg(info.ra));
+          // FATAL();
           break;
         }
 
-        case 8:
-        case 9: {  // rldcl
-          assert(0);
+        case 8: {  // rldcl
+          u8 n = get_reg(info.rb) & 0xFF;
+
+          u64 r = std::rotl<u64>(get_reg(info.rs), n);
+
+          u64 m = MASK(0, 63 - info.mb);
+          set_reg(info.ra, r & m);  // TODO: sus
+          break;
+        }
+        case 9: {  // rldcr
+          u8 n = get_reg(info.rb) & 0xFF;
+
+          u64 r = std::rotl<u64>(get_reg(info.rs), n);
+
+          u64 m = MASK(63 - info.me, 63);
+          set_reg(info.ra, r & m);  // TODO: sus
           break;
         }
 
-        default: assert(0);
+        default: {
+          // break;
+          FATAL(std::format("bits: {}", rotate_type));
+        }
       }
       break;
     }
@@ -141,6 +181,11 @@ void PPE::execute(PPC::InstructionInfo& info) {
       u16 instruction_bits = PPC::get_bits<u16, u32>(info.full_opcode, {21, 30});
 
       switch (instruction_bits) {
+        case 0: {
+          PPC::cmp(info, *this);
+          break;
+        }
+
         case MFSPR: {
           PPC::mfspr(info, *this);
           break;
@@ -157,19 +202,27 @@ void PPE::execute(PPC::InstructionInfo& info) {
         }
 
         case EXTSW: {
-          assert(0);
+          EXTSx<u32>(info, *this);
           break;
         }
 
-          // static constexpr u16 X
+        case EXTSH: {
+          EXTSx<u16>(info, *this);
+          break;
+        }
 
-        case 32: {
+        case 19: {
+          PPC::mfcr(info, *this);
+          break;
+        }
+
+        case 32: {  // cmpl
+          // PPC::cmpl(info, *this);
           fmt::println("doing comp");
           u64 a = 0;
           u64 b = 0;
 
           if (info.l == 0) {
-            // FATAL();
             a = get_reg(info.ra) & 0xFFFFFFFF;
             b = get_reg(info.rb) & 0xFFFFFFFF;
           } else {
@@ -177,21 +230,78 @@ void PPE::execute(PPC::InstructionInfo& info) {
             b = get_reg(info.rb);
           }
 
-          if (a < b) {
-            set_bit_cr_reg(info.bf, 0);
-          } else if (a > b) {
-            set_bit_cr_reg(info.bf, 1);
-          } else {
-            set_bit_cr_reg(info.bf, 2);
-          }
+          set_cr_field(info.bf, a < b ? CR_LT : a > b ? CR_GT : CR_EQ);
 
           fmt::println("[post cmp] CR = {:#016x}", cr);
-
-          // assert(0);
           break;
         }
 
-        default: assert(0);
+        case 28: {
+          PPC::AND(info, *this);
+          break;
+        }
+        case 104: {
+          PPC::NEG(info, *this);
+          break;
+        }
+        case 316: {
+          PPC::XOR(info, *this);
+          break;
+        }
+
+        case 144: {
+          PPC::mtocrf(info, *this);
+          break;
+        }
+
+        case 266: {
+          PPC::add(info, *this);
+          break;
+        }
+
+        case 278: {
+          // TODO: implement dcbt?
+          break;
+        }
+
+        case NOR: {
+          PPC::NOR(info, *this);
+
+          break;
+        }
+
+        case CNTLZD: {
+          PPC::CNTLZx<u64>(info, *this);
+          break;
+        }
+        case CNTLZW: {
+          PPC::CNTLZx<u32>(info, *this);
+          break;
+        }
+        case SUBF: {
+          PPC::subf(info, *this);
+          break;
+        }
+
+        case SRD: {
+          shift<Right, u64>(info, *this);
+          break;
+        }
+        case SRW: {
+          shift<Right, u32>(info, *this);
+          break;
+        }
+
+        case SLD: {
+          shift<Left, u64>(info, *this);
+          break;
+        }
+        case SLW: {
+          shift<Left, u32>(info, *this);
+          break;
+        }
+
+        default: FATAL(fmt::format("unhandled exec: {}", instruction_bits));
       }
       break;
     }
@@ -201,34 +311,84 @@ void PPE::execute(PPC::InstructionInfo& info) {
       break;
     }
 
-    case 32:
-    case 33:
-    case 34:
-    case 35:
-    case 40:
-    case 41:
-    case 42:
-    case 43:
-    case 58: {
-      PPC::gen_load(info, *this);
+    case 32: {
+      gen_load<u32, false, false>(info, *this);
       break;
-    };
+    }
+    case 34: {
+      gen_load<u8, false, false>(info, *this);
+      break;
+    }
+    case 40: {
+      gen_load<u16, false, false>(info, *this);
+      break;
+    }
+    case LHA: {
+      gen_load<u16, false, true>(info, *this);
+      break;
+    }
+
+    case LBZU: {
+      gen_load<u8, true, false>(info, *this);
+      break;
+    }
+
+    case LHZU: {
+      gen_load<u16, true, false>(info, *this);
+      break;
+    }
+
+    case 58: {  // LD[U]
+      if (PPC::get_bits<u8, u32>(info.full_opcode, {30, 31}) == 1) { // LDU
+        gen_load<u64, true, false>(info, *this);  // update is ignored, can't derive this at compile time
+      } else if (PPC::get_bits<u8, u32>(info.full_opcode, {30, 31}) == 0) { // LD
+        gen_load<u64, false, false>(info, *this);  // update is ignored, can't derive this at compile time
+      } else {
+        gen_load<u32, false, true>(info, *this); // LWA
+      }
+      break;
+    }
 
     case SC: {
       PPC::sc(info, *this);
       break;
     }
-    case 36:
-    case 37:
-    case 38:
-    case 39:
-    case 44:
-    case 45:
-    case 47:
-    case 62: {
-      PPC::gen_store(info, *this);
+    case STW: {
+      PPC::gen_store<u32, false>(info, *this);
       break;
-    };
+    }
+    case STB: {
+      PPC::gen_store<u8, false>(info, *this);
+      break;
+    }
+    case STH: {
+      PPC::gen_store<u16, false>(info, *this);
+      break;
+    }
+    case STHU: {
+      PPC::gen_store<u16, true>(info, *this);
+      break;
+    }
+    case STWU: {
+      PPC::gen_store<u32, true>(info, *this);
+      break;
+    }
+
+    case STDU: {
+      if (info.xo > 1) FATAL();
+
+      if (info.xo == 0) {  // STD
+        PPC::gen_store<u64, false>(info, *this);
+      } else {  // STDU
+        PPC::gen_store<u64, true>(info, *this);
+      }
+      break;
+    }
+
+    case LWZU: {
+      PPC::gen_load<u32, true, false>(info, *this);
+      break;
+    }
 
     case 19: {
       // see ppc book1 (cr ops table 16)
@@ -242,6 +402,11 @@ void PPE::execute(PPC::InstructionInfo& info) {
           break;
         }
 
+        case 528: {
+          PPC::bcctr(info, *this);
+          break;
+        }
+
         default: {
           FATAL("UNIMPLEMENTED CR OP");
           break;
@@ -249,6 +414,7 @@ void PPE::execute(PPC::InstructionInfo& info) {
       }
       break;
     }
+
     default: {
       FATAL(fmt::format("could not execute opcd: {} full opcode: {:#016x}", info.opcode, info.full_opcode));
       break;
@@ -256,11 +422,10 @@ void PPE::execute(PPC::InstructionInfo& info) {
   }
 }
 
-void PPE::set_bit_cr_reg(u8 crfield, u8 bit) {
-  u8 base = crfield * 4;
-  // clear all 4 bits of this field first
-  cr &= ~(0xFull << (28 - base));  // adjust shift to match your bit ordering
-  cr |= (1ull << (31 - (base + bit)));
+void PPE::set_cr_field(u8 crfield, u8 value) {
+  const u8 sh = 4 * (7 - crfield);
+  value       = (value & 0xE) | ((xer >> 31) & 1);
+  cr          = (cr & ~(0xFu << sh)) | (u32(value) << sh);
 }
 
 void PPE::clear_bit_cr_reg(u8 cr_n, u8 bit) {
@@ -311,64 +476,18 @@ void PPE::clear_full_cr_reg(u8 cr_n) {
 
 bool PPE::test_bit_cr_reg(u8 bit) { return cr & (1ull << (31 - bit)); };
 
-bool PPE::check_branch_condition(u8 BO, u8 BI) {
-  fmt::println("BO======{}", BO);
-  fmt::println("BI======{}", BI);
+bool PPE::check_branch_condition(u8 bo, u8 bi) {
+  fmt::println("BO======{}", bo);
+  fmt::println("BI======{}", bi);
+  const bool bo0 = (bo >> 4) & 1;
+  const bool bo1 = (bo >> 3) & 1;
+  const bool bo2 = (bo >> 2) & 1;
+  const bool bo3 = (bo >> 1) & 1;
 
-  //   Decrement the CTR, then branch if the decremented CTRM:63!=0 and CRBI=0
-  if (BO <= 1) {
-    fmt::println("PC");
-    ctr--;
-    if (ctr != 0 && !test_bit_cr_reg(BI)) return true;
-  }
+  if (!bo2) ctr -= 1;
 
-  //   Decrement the CTR, then branch if the
-  // decremented CTRM:63=0 and CRBI=0
-  if ((BO >> 1) == 1) {
-    fmt::println("PB");
-    ctr--;
-    if (ctr == 0 && !test_bit_cr_reg(BI)) return true;
-  }
+  const bool ctr_ok  = bo2 || ((ctr != 0) != bo3);
+  const bool cond_ok = bo0 || (((cr >> (31 - bi)) & 1) == bo1);
 
-  // Branch if CRBI=0
-  if ((BO >> 2) == 1) {
-    fmt::println("PA");
-    return !test_bit_cr_reg(BI);
-  }
-
-  //   Decrement the CTR, then branch if the
-  // decremented CTRM:63!=0 and CRBI=1
-  if ((BO >> 3) == 1) {
-    ctr--;
-    if (ctr != 0 && test_bit_cr_reg(BI)) return true;
-  }
-
-  //   Decrement the CTR, then branch if the
-  // decremented CTRM:63=0 and CRBI=1
-  if ((BO >> 3) == 1) {
-    ctr--;
-    if (ctr == 0 && test_bit_cr_reg(BI)) return true;
-  }
-
-  // Branch if CRBI=1
-  if ((BO >> 2) == 3) {
-    return test_bit_cr_reg(BI);
-  }
-
-  //   Decrement the CTR, then branch if the
-  if ((BO & 0b10110) == 16) {
-    fmt::println("Z");
-    ctr--;
-    return ctr != 0;
-  }
-
-  // Decrement the CTR, then branch if the
-  if ((BO & 0b10110) == 18) {
-    ctr--;
-    return ctr == 0;
-  }
-
-  fmt::println("always branch!");
-  // always branch
-  return true;
+  return ctr_ok && cond_ok;
 }
