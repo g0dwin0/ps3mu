@@ -20,8 +20,8 @@
 
 #include "common/defs.hpp"
 #include "spdlog/spdlog.h"
-
-inline std::vector<u8> read_file(std::string filename) {
+inline u64 global_step_count = 0;
+inline std::vector<u8> read_file(const std::string filename) {
   std::ifstream file(filename.data(), std::ios::binary);
 
   if (!file.good()) {
@@ -52,14 +52,14 @@ inline void hexdump(std::vector<u8>& src, size_t len, size_t base) {
 
     if (i % 16 == 0) fmt::print("{:#08x}: ", base + i);
 
-    uint8_t value = src.at(base + i);
+    u8 value = src.at(base + i);
     fmt::print("{:#04x}", value);
     fmt::print(" ");
   }
 }
 
 inline static void FATAL(const std::string x = "unhandled", const std::source_location location = std::source_location::current()) {
-  fmt::println("FATAL: {} -- {}:{}", x, location.file_name(), location.line());
+  fmt::println("FATAL: {} -- {}:{} gs: {}", x, location.file_name(), location.line(), global_step_count);
   exit(-1);
 }
 
@@ -108,25 +108,27 @@ struct fmt::formatter<BE<T>> : fmt::formatter<T> {
   auto format(const BE<T>& v, format_context& ctx) const { return fmt::formatter<T>::format(static_cast<T>(v), ctx); }
 };
 
-inline u64 MASK(u64 x, u64 y) {
-  u64 mask = U64_MAX;
-  u8 tb    = 64 - (y + 1);
+inline u64 MASK(u8 x, u8 y) {
+  fmt::println("X: {}", x);
+  fmt::println("X: {}", x);
+  
+  assert(x <= y);
+  u64 mask = 0;
 
-  mask <<= tb;
-  mask >>= x;
+  for (size_t idx = x; idx <= y; idx++) {
+    mask |= (1ULL << idx);
+    // fmt::println("MASK: {:#066b}", mask);
+    // fmt::println("MASK: {}", mask);
+  }
   return mask;
-  // return ((1 << (y - x)) - 1);
 }
 
-// 00000000100000000000000000000000
-inline u64 EXTS(u64 msb, u64 value) {
-  u64 masked_retval = value & ((1ULL << msb) - 1);
+inline u64 EXTS(const u64 msb, const u64 value) {
+  u64 masked_retval = value & (1ULL << msb) - 1;
   bool msb_set      = (value & (1ULL << msb)) != 0;
 
   if (msb_set) {
-    u64 set_bits = U64_MAX << msb;
-    // fmt::println("generated mask:   {:#066b}", set_bits);
-    // fmt::println("pre-retval:       {:#066b}", masked_retval);
+    const u64 set_bits = U64_MAX << msb;
     masked_retval |= set_bits;
   }
 
