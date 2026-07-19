@@ -34,11 +34,12 @@ namespace PPC {
     u32 full_opcode;
     u8 opcode;
     u8 bo, bi;
-    bool aa, lk, lev, rc;
-    u8 rt, ra, rb, oe, rs, bf, l, frt, frs, to, fra, sh, mb, me;
+    bool aa, lk, rc;
+    u8 fxm, rt, ra, rb, oe, rs, bf, l, frt, frs, to, fra, sh, mb, me;
     u64 d, si, ui, xo;
     u16 bd, bh;
     u64 li, ds;
+    u8 lev;
     std::string mnemnonic;
   };
 
