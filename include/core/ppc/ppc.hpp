@@ -5,17 +5,17 @@
 #include "common/defs.hpp"
 #include "ppc/parser.hpp"
 #include "ppe.hpp"
-
-
-
-static constexpr u8 TDI    = 0x02;
-static constexpr u8 TWI    = 0x03;
-static constexpr u8 MULLI  = 0x07;
-static constexpr u8 SUBFIC = 0x08;
-static constexpr u8 DOZI   = 0x09;
-static constexpr u8 CMPLI  = 0x0A;
-static constexpr u8 CMPI   = 0x0B;
-static constexpr u8 ADDIC  = 0x0C;
+static constexpr u8 STORE_DOUBLEWORD = 0x3E;
+static constexpr u16 MTOCRF          = 144;
+static constexpr u16 SUBF            = 40;
+static constexpr u8 TDI              = 0x02;
+static constexpr u8 TWI              = 0x03;
+static constexpr u8 MULLI            = 0x07;
+static constexpr u8 SUBFIC           = 0x08;
+static constexpr u8 DOZI             = 0x09;
+static constexpr u8 CMPLI            = 0x0A;
+static constexpr u8 CMPI             = 0x0B;
+static constexpr u8 ADDIC            = 0x0C;
 // static constexpr u8 ADDIC             = 0x0D;
 static constexpr u8 ADDI              = 0x0E;
 static constexpr u8 ADDIS             = 0x0F;
@@ -63,11 +63,23 @@ static constexpr u8 FX_DS_FORM_LOADS  = 0x3A;
 static constexpr u8 FP_SINGLE_EXT_OPS = 0x3B;
 static constexpr u8 FX_DS_FORM_STORES = 0x3E;
 static constexpr u8 FP_DOUBLE_EXT_OPS = 0x3F;
+static constexpr u16 NOR              = 124;
+static constexpr u16 CNTLZD           = 58;
+static constexpr u16 CNTLZW           = 26;
+static constexpr u16 MFSPR            = 339;
+static constexpr u16 MTSPR            = 467;
+static constexpr u16 _OR              = 444;
+static constexpr u16 EXTSH            = 922;
+static constexpr u16 EXTSW            = 986;
+static constexpr u16 STDU             = 62;
 
-static constexpr u16 MFSPR = 339;
-static constexpr u16 MTSPR = 467;
-static constexpr u16 _OR   = 444;
-static constexpr u16 EXTSW = 986;
+static constexpr u16 SRW = 536;
+static constexpr u16 SRD = 539;
+
+static constexpr u16 SLW = 24;
+static constexpr u16 SLD = 27;
+
+enum : u8 { CR_LT = 0x8, CR_GT = 0x4, CR_EQ = 0x2, CR_SO = 0x1 };
 
 namespace PPC {
 
@@ -111,7 +123,7 @@ namespace PPC {
       {0x1E,       {"FX_DWD_ROT", InstructionFormat::MDS_FORM}},
       {0x1F,      {"FX_EXT_OPS", InstructionFormat::UNDEFINED}},
       {0x20,                {"lwz", InstructionFormat::D_FORM}},
-      {0x21,            {"lwzu", InstructionFormat::UNDEFINED}},
+      {0x21,               {"lwzu", InstructionFormat::D_FORM}},
       {0x22,                {"lbz", InstructionFormat::D_FORM}},
       {0x23,               {"lbzu", InstructionFormat::D_FORM}},
       {0x24,                {"stw", InstructionFormat::D_FORM}},
@@ -141,50 +153,177 @@ namespace PPC {
   };
 
   const std::unordered_map<u16, OpcodeInfo> fx_ext_ops_map = {
-      {  0x0,     {"cmp", InstructionFormat::X_FORM}},
-      {   32,    {"cmpl", InstructionFormat::X_FORM}},
-      {   40,   {"subf", InstructionFormat::XO_FORM}},
-      {  138,    {"add", InstructionFormat::XO_FORM}},
-      {  266,    {"add", InstructionFormat::XO_FORM}},
-      {MTSPR, {"mtspr", InstructionFormat::XFX_FORM}},
-      {MFSPR, {"mfspr", InstructionFormat::XFX_FORM}},
-      {  _OR,      {"or", InstructionFormat::X_FORM}},
+      {   0x0,      {"cmp", InstructionFormat::X_FORM}},
+      {    32,     {"cmpl", InstructionFormat::X_FORM}},
+      {  SUBF,    {"subf", InstructionFormat::XO_FORM}},
+      // {   138,     {"adde", InstructionFormat::XO_FORM}},
+      {   266,     {"add", InstructionFormat::XO_FORM}},
+      {    19,   {"mfcr", InstructionFormat::XFX_FORM}},
+      {    28,      {"and", InstructionFormat::X_FORM}},
+      {   316,      {"xor", InstructionFormat::X_FORM}},
+      {   104,     {"neg", InstructionFormat::XO_FORM}},
+      {   278,     {"dcbt", InstructionFormat::X_FORM}},
+      {   124,      {"nor", InstructionFormat::X_FORM}},
+      {CNTLZD,   {"cntlzd", InstructionFormat::X_FORM}},
+      {CNTLZW,   {"cntlzw", InstructionFormat::X_FORM}},
 
-      {EXTSW,   {"extsw", InstructionFormat::X_FORM}},
+      {   536,      {"srw", InstructionFormat::X_FORM}},
+      {   539,      {"srd", InstructionFormat::X_FORM}},
+
+      {    27,      {"sld", InstructionFormat::X_FORM}},
+      {    24,      {"slw", InstructionFormat::X_FORM}},
+
+      {MTOCRF, {"mtocrf", InstructionFormat::XFX_FORM}},
+      { MTSPR,  {"mtspr", InstructionFormat::XFX_FORM}},
+      { MFSPR,  {"mfspr", InstructionFormat::XFX_FORM}},
+      {   _OR,       {"or", InstructionFormat::X_FORM}},
+      { EXTSW,    {"extsw", InstructionFormat::X_FORM}},
+      { EXTSH,    {"extsh", InstructionFormat::X_FORM}},
   };
 
-  void tdi(PPC::InstructionInfo&, PPE& ppe);
-  void twi(PPC::InstructionInfo&, PPE& ppe);
-  void mulli(PPC::InstructionInfo&, PPE& ppe);
-  void subfic(PPC::InstructionInfo&, PPE& ppe);
-  void dozi(PPC::InstructionInfo&, PPE& ppe);
-  void cmpli(PPC::InstructionInfo&, PPE& ppe);
-  void cmpi(PPC::InstructionInfo&, PPE& ppe);
-  void addic(PPC::InstructionInfo&, PPE& ppe);
-  void branch(PPC::InstructionInfo&, PPE& ppe);
-  void bclr(PPC::InstructionInfo&, PPE& ppe);
-  
-  void branch_conditional(PPC::InstructionInfo&, PPE& ppe);
-  
+  void mulli(InstructionInfo&, PPE& ppe);
+  void subfic(InstructionInfo&, PPE& ppe);
+  void dozi(InstructionInfo&, PPE& ppe);
+  void cmpli(InstructionInfo&, PPE& ppe);
+  void cmpi(InstructionInfo&, PPE& ppe);
+  void cmp(InstructionInfo&, PPE& ppe);
 
-  void addi(PPC::InstructionInfo&, PPE& ppe);
-  void bc(PPC::InstructionInfo&, PPE& ppe);
-  void sc(PPC::InstructionInfo&, PPE& ppe);
-  void b(PPC::InstructionInfo&, PPE& ppe);
-  void rlwimi(PPC::InstructionInfo&, PPE& ppe);
-  void rlwinm(PPC::InstructionInfo&, PPE& ppe);
-  void OR(PPC::InstructionInfo&, PPE& ppe);
-  void ori(PPC::InstructionInfo&, PPE& ppe);
-  void oris(PPC::InstructionInfo&, PPE& ppe);
-  void xori(PPC::InstructionInfo&, PPE& ppe);
-  void xoris(PPC::InstructionInfo&, PPE& ppe);
-  void andi(PPC::InstructionInfo&, PPE& ppe);
-  void andis(PPC::InstructionInfo&, PPE& ppe);
-  void lwz(PPC::InstructionInfo&, PPE& ppe);
-  void gen_load(PPC::InstructionInfo&, PPE& ppe);
-  void gen_store(PPC::InstructionInfo&, PPE& ppe);
-  void mtspr(PPC::InstructionInfo&, PPE& ppe);
-  void mfspr(PPC::InstructionInfo&, PPE& ppe);
+  void addic(InstructionInfo&, PPE& ppe);
+  void branch(InstructionInfo&, PPE& ppe);
+  void bclr(InstructionInfo&, PPE& ppe);
+  void bcctr(InstructionInfo&, PPE& ppe);
+  void mtocrf(InstructionInfo& info, PPE& ppe);
+  void AND(InstructionInfo& info, PPE& ppe);
+  void XOR(InstructionInfo& info, PPE& ppe);
+  void NEG(InstructionInfo& info, PPE& ppe);
+
+  void branch_conditional(InstructionInfo&, PPE& ppe);
+
+  void addi(InstructionInfo&, PPE& ppe);
+  void addis(InstructionInfo&, PPE& ppe);
+
+  void bc(InstructionInfo&, PPE& ppe);
+  void sc(InstructionInfo&, PPE& ppe);
+  void b(InstructionInfo&, PPE& ppe);
+  void rlwimi(InstructionInfo&, PPE& ppe);
+  void rlwinm(InstructionInfo&, PPE& ppe);
+  void OR(InstructionInfo&, PPE& ppe);
+  void ori(InstructionInfo&, PPE& ppe);
+  void oris(InstructionInfo&, PPE& ppe);
+  void xori(InstructionInfo&, PPE& ppe);
+  void xoris(InstructionInfo&, PPE& ppe);
+  void andi(InstructionInfo&, PPE& ppe);
+  void andis(InstructionInfo&, PPE& ppe);
+  void mtspr(InstructionInfo&, PPE& ppe);
+  void mfspr(InstructionInfo&, PPE& ppe);
+  void mfcr(InstructionInfo&, PPE& ppe);
+  void extsw(InstructionInfo& info, PPE& ppe);
+  void extsh(InstructionInfo& info, PPE& ppe);
+  void add(InstructionInfo& info, PPE& ppe);
+  void NOR(InstructionInfo& info, PPE& ppe);
+  void subf(InstructionInfo& info, PPE& ppe);
+
+  template <AccessWidth Size>
+  void CNTLZx(InstructionInfo& info, PPE& ppe) {
+    ppe.set_reg(info.ra, std::countl_zero<Size>(ppe.get_reg(info.rs)));
+
+    if (info.rc) FATAL();
+  }
+
+  template <AccessWidth Size, bool Update, bool SignExtRT>
+  void gen_load(InstructionInfo& info, PPE& ppe) {
+    u64 b  = 0;
+    u64 ea = 0;
+
+    if constexpr (Update) {
+      b = ppe.gpr.at(info.ra);
+    } else {
+      if (info.ra != 0) {
+        b = ppe.gpr.at(info.ra);
+      }
+    }
+
+    if constexpr (sizeof(Size) == 8 || (SignExtRT && sizeof(Size) == 4)) {
+      ea = b + EXTS(15, info.ds << 2);
+    } else {
+      ea = b + EXTS(15, info.d);
+    }
+
+    fmt::println("EA = {:#016x}", ea);
+    u64 result          = ppe.bus->read<Size>(ea);
+    ppe.gpr.at(info.rt) = SignExtRT ? EXTS((sizeof(Size) * 8) - 1, result) : result;
+
+    if (Update) {
+      ppe.set_reg(info.ra, ea);
+    }
+  }
+
+  template <AccessWidth Size, bool Update>
+  void gen_store(InstructionInfo& info, PPE& ppe) {
+    u64 b = 0;
+
+    if constexpr (Update) {
+      b = ppe.get_reg(info.ra);
+    } else {
+      b = info.ra != 0 ? ppe.get_reg(info.ra) : 0;
+    }
+
+    u64 ea = b;
+
+    if constexpr (sizeof(Size) == 8) {
+      ea += EXTS(15, info.ds << 2);
+    } else {
+      ea += EXTS(15, info.d);
+    }
+
+    ppe.bus->write<Size>(ea, ppe.get_reg(info.rs));
+
+    if constexpr (Update) {
+      ppe.set_reg(info.ra, ea);
+    }
+  }
+
+  template <ShiftDirection Direction, AccessWidth Size>
+  void shift(InstructionInfo& info, PPE& ppe) {
+    u64 mask = 0;
+    u64 rb_value = ppe.get_reg(info.rb);
+    u64 n        = rb_value & (sizeof(Size) == 8 ? 0x7f : 0x3f);
+    u8 n_limit = sizeof(Size) == 8 ? 63 : 31;
+    u8 shift_value = 0;
+
+    fmt::println("RB: {:#016x}", ppe.get_reg(info.rb));
+    fmt::println("RS: {:#016x}", ppe.get_reg(info.rs));
+    fmt::println("SZ: {}", sizeof(Size));
+
+    if constexpr (Direction == Right) {
+      shift_value = 64-n;
+    } else {
+      shift_value = n;
+    }
+
+    const Size r = std::rotl(Size(ppe.get_reg(info.rs)) & (sizeof(Size) == 4ull ? 0xFFFFFFFF : 0xFFFFFFFFFFFFFFFF), shift_value);
+    fmt::println("r: {:#016x}", r);
+
+    fmt::println("N: {}", n);
+
+    if (n <= n_limit) {
+      if constexpr (Direction == Right) {
+        mask = MASK(0, n_limit - n);
+      } else {
+        mask = MASK(n, n_limit);
+      }
+    }
+
+    ppe.set_reg(info.ra, r & mask);
+  }
+
+  template <AccessWidth Size, size_t size = sizeof(Size) * 8>
+  void EXTSx(InstructionInfo& info, PPE& ppe) {
+    static_assert(size <= 32, "Cannot sign extend values larger than 32-bits.");
+    ppe.set_reg(info.ra, EXTS(size - 1, ppe.get_reg(info.rs)));
+
+    if (info.rc) FATAL();
+  }
 
   template <typename RetValWidth, typename InputWidth>
   RetValWidth get_bits(u32 n, std::pair<u8, u8> be_range) {
@@ -192,8 +331,7 @@ namespace PPC {
 
     assert(start <= end);
 
-    n = (n >> ((sizeof(InputWidth) * 8) - end - 1));
-    // fmt::println("N: {:#016x} -- shifted out: {}", n, ((sizeof(InputWidth) * 8) - end - 1));
+    n = n >> ((sizeof(InputWidth) * 8) - end - 1);
 
     u32 mask = (1 << (end + 1 - start)) - 1;
 
@@ -201,10 +339,7 @@ namespace PPC {
       n &= mask;
     }
 
-    // fmt::println("retval: {}\n", (RetValWidth)n);
-
     return n;
   }
 
-  
 }  // namespace PPC
