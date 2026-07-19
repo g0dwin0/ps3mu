@@ -26,6 +26,7 @@ struct State {
   bool halted                  = false;
   int step_amount              = 0;
   ImGuiIO* io                  = nullptr;
+  bool tty_log_open = true;
 };
 
 struct Keymap_State {
@@ -71,6 +72,7 @@ struct Frontend {
   void init_sdl();
 
   void handle_events();
+  void show_tty_log();
 
   void render_frame();
 

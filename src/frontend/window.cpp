@@ -29,9 +29,14 @@ void Frontend::handle_events() {
     ImGui_ImplSDL3_ProcessEvent(&event);
   }
 }
-
+void Frontend::show_tty_log() {
+  ImGui::Begin("TTY LOG", &state.tty_log_open, 0);
+  ImGui::Text("%s", fmt::format("{}", sys_instance->cell_be.ppe.logs).c_str());
+  ImGui::End();
+}
 void Frontend::show_memory_viewer() {
   ImGui::Begin("Memory Viewer", &state.memory_viewer_open, 0);
+
   // const char* regions[] = {"Region: [0x00000000 - 0x00003FFF] BIOS", "Region: [0x02000000 - 0x0203FFFF] EWRAM", "Region: [0x03000000 - 0x03007FFF] IWRAM",
   //                          // "Region: [0x04000000 - 0x040003FE] IO",
   //                          "Region: [0x05000000 - 0x050003FF] BG/OBJ Palette RAM", "Region: [0x06000000 - 0x06017FFF] VRAM", "Region: [0x07000000 - 0x070003FF] OAM",
@@ -78,7 +83,7 @@ void Frontend::show_cpu_info() {
   }
 
   ImGui::Columns(1);
-  ImGui::Text("%s", fmt::format("CTR", cpu.ppe.ctr).c_str());
+  ImGui::Text("%s", fmt::format("CTR: {:#016x}", cpu.ppe.ctr).c_str());
   ImGui::Text("%s", fmt::format("LR: {:#016x}", cpu.ppe.lr).c_str());
 
   ImGui::Text("%s", fmt::format("CIA: {:#016x}", cpu.ppe.cia).c_str());
@@ -168,6 +173,10 @@ void Frontend::render_frame() {
     show_memory_viewer();
   }
 
+  if (state.tty_log_open) {
+    show_tty_log();
+  }
+
   ImGui::Render();
   SDL_SetRenderScale(renderer, state.io->DisplayFramebufferScale.x, state.io->DisplayFramebufferScale.y);
 
@@ -224,9 +233,8 @@ void Frontend::init_sdl() {
     fmt::println("Could not create texture: {}", SDL_GetError());
     assert(0);
   }
-  
-  SDL_SetTextureScaleMode(state.gpu_texture, SDL_SCALEMODE_NEAREST);
 
+  SDL_SetTextureScaleMode(state.gpu_texture, SDL_SCALEMODE_NEAREST);
 };
 void Frontend::init_audio_device() {
   SDL_AudioSpec spec = {};
