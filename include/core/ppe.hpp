@@ -6,13 +6,11 @@
 #include "common/defs.hpp"
 #include "ppc/parser.hpp"
 
-enum ShiftDirection {
-  Left, Right
-};
+enum ShiftDirection { Left, Right };
 
 union FPSCR {
   u32 fpscr;
-  struct __attribute__((packed)) {
+  struct  {
     u8 FX       : 1;
     u8 FEX      : 1;
     u8 VX       : 1;
@@ -71,10 +69,11 @@ struct PPE {
 
   u32 fetch(u64 addr) const;
 
-  u64& get_reg_ref(u8 reg) { return gpr.at(reg); }
-  u64 get_reg(u8 reg) { return gpr.at(reg); }
+  u64 get_gpr(u8 reg) { return gpr.at(reg); }
+  u64 get_fpr(u8 reg) { return fpr.at(reg); }
 
-  void set_reg(u8 reg, u64 value) { gpr.at(reg) = value; }
+  void set_gpr(u8 reg, u64 value) { gpr.at(reg) = value; }
+  void set_fpr(u8 reg, u64 value) { fpr.at(reg) = value; }
 
   void decode(u32 op, PPC::InstructionInfo& instruction_info);
   void step();
@@ -83,6 +82,11 @@ struct PPE {
   void clear_bit_cr_reg(u8 cr_n, u8 bit);
   void clear_full_cr_reg(u8 cr_n);
   bool test_bit_cr_reg(u8 bit);
+
+  void set_carry();
+  void reset_carry();
+  bool carry_is_set();
+  
 
   union {
     u32 cr{};

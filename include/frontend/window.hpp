@@ -19,7 +19,8 @@ struct State {
 
   const bool* keyboard_state = SDL_GetKeyboardState(nullptr);
   std::atomic<bool> running  = true;
-
+  
+  bool fpscr_open = true;
   bool memory_viewer_open   = true;
   bool cpu_info_open        = true;
   
@@ -33,7 +34,6 @@ struct Keymap_State {
   SDL_Scancode current_key;
   bool being_remapped;
 };
-
 
 enum class KEY { CROSS, SQUARE, TRIANGLE, CIRCLE, DPAD_UP, DPAD_LEFT, DPAD_RIGHT, DPAD_DOWN, START, SELECT, L1, L2, R1, R2, NONE = 0xFF };
 
@@ -73,7 +73,7 @@ struct Frontend {
 
   void handle_events();
   void show_tty_log();
-
+void show_fpscr();
   void render_frame();
 
   void show_menu_bar();
@@ -85,6 +85,7 @@ struct Frontend {
   void show_memory_viewer();
   void show_cpu_info();
   void show_controls_menu(bool*);
+  void dump_tty();
 
   explicit Frontend(SysInstance*);
 

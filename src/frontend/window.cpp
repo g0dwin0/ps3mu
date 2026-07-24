@@ -4,7 +4,6 @@
 
 #include <atomic>
 
-#include "SDL3/SDL_dialog.h"
 #include "SDL3/SDL_render.h"
 #include "SDL3/SDL_video.h"
 #include "common/stopwatch.hpp"
@@ -32,6 +31,11 @@ void Frontend::handle_events() {
 void Frontend::show_tty_log() {
   ImGui::Begin("TTY LOG", &state.tty_log_open, 0);
   ImGui::Text("%s", fmt::format("{}", sys_instance->cell_be.ppe.logs).c_str());
+  ImGui::End();
+}
+void Frontend::show_fpscr() {
+  ImGui::Begin("FPSCR", &state.fpscr_open, 0);
+
   ImGui::End();
 }
 void Frontend::show_memory_viewer() {
@@ -76,13 +80,20 @@ void Frontend::show_memory_viewer() {
 void Frontend::show_cpu_info() {
   ImGui::Begin("CPU INFO", &state.cpu_info_open, 0);
   const auto& cpu = sys_instance->cell_be;
-  ImGui::Columns(2, "Registers");
+  ImGui::Columns(2, "GPR");
   for (u8 i = 0; i < 32; i++) {
-    if (i % 2 == 0 && i != 0) ImGui::NextColumn();
-    ImGui::Text("%s", fmt::format("r{:d}:   {:#016x}", i, sys_instance->cell_be.ppe.gpr.at(i)).c_str());
+    // if (i % 2 == 0 && i != 0) ImGui::NextColumn();
+    ImGui::Text("%s", fmt::format("r{:d}:   {:#016x}", i, sys_instance->cell_be.ppe.get_gpr(i)).c_str());
   }
-
+  ImGui::NextColumn();
+  // ImGui::Columns(2, "FPR");
+  for (u8 i = 0; i < 32; i++) {
+    // if (i % 2 == 0 && i != 0) ImGui::NextColumn();
+    ImGui::Text("%s", fmt::format("fr{:d}:   {:#016x}", i, sys_instance->cell_be.ppe.get_fpr(i)).c_str());
+  }
   ImGui::Columns(1);
+
+
   ImGui::Text("%s", fmt::format("CTR: {:#016x}", cpu.ppe.ctr).c_str());
   ImGui::Text("%s", fmt::format("LR: {:#016x}", cpu.ppe.lr).c_str());
 
@@ -116,6 +127,10 @@ void Frontend::show_cpu_info() {
   if (ImGui::Button("Disable Logging")) {
     spdlog::set_level(spdlog::level::off);
   }
+  if (ImGui::Button("write tty")) {
+    dump_tty();
+  }
+
 
   ImGui::End();
 }
@@ -133,7 +148,7 @@ void Frontend::show_menu_bar() {
 
         //       auto agb = static_cast<AGB*>(userdata);
         //       (void)(agb);
-        //       fmt::println("{}", *filelist);
+        //       spdlog::info("{}", *filelist);
 
         //       // agb->pak.load_data(std::vector<u8> &)
         //     },
@@ -188,6 +203,13 @@ void Frontend::render_frame() {
   SDL_RenderPresent(renderer);
 }
 
+void Frontend::dump_tty() {
+  std::ofstream myfile;
+  myfile.open("tty.txt");
+  // std::cout << myfile.is_open() << std::endl;
+  myfile << sys_instance->cell_be.ppe.logs;
+  myfile.close();
+}
 void Frontend::init_sdl() {
   spdlog::info("initializing SDL");
 
@@ -230,7 +252,7 @@ void Frontend::init_sdl() {
   ImGui_ImplSDLRenderer3_Init(renderer);
   this->state.gpu_texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_XBGR8888, SDL_TEXTUREACCESS_TARGET, 240, 160);
   if (this->state.gpu_texture == NULL) {
-    fmt::println("Could not create texture: {}", SDL_GetError());
+    spdlog::info("Could not create texture: {}", SDL_GetError());
     assert(0);
   }
 
@@ -245,12 +267,12 @@ void Frontend::init_audio_device() {
   stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, NULL, NULL);
 
   if (!stream) {
-    fmt::println("Couldn't create audio stream: {}", SDL_GetError());
+    spdlog::info("Couldn't create audio stream: {}", SDL_GetError());
     exit(-1);
   }
 
   if (!SDL_ResumeAudioStreamDevice(stream)) {
-    fmt::println("failed to unpause audio device: {}", SDL_GetError());
+    spdlog::info("failed to unpause audio device: {}", SDL_GetError());
     assert(0);
   }
 

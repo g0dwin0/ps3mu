@@ -14,7 +14,7 @@ struct Bus {
 
   template <AccessWidth Width>
   [[nodiscard]] Width read(u64 _address) {
-    fmt::println("{:#016x}", _address);
+    spdlog::info("{:#016x}", _address);
     Width r = *(Width*)&memory.at(vmm.virt_to_phys(_address));
 
     if constexpr (sizeof(Width) == 2) {
@@ -25,10 +25,10 @@ struct Bus {
     }
     if constexpr (sizeof(Width) == 8) {
       const auto& mem = memory.data() + vmm.virt_to_phys(_address);
-      r = (u64)mem[0] << 56 | (u64)mem[1] << 48 | (u64)mem[2] << 40 | (u64)mem[3] << 32 | (u64)mem[4] << 24 | (u64)mem[5] << 16 | (u64)mem[6] << 8 | (u64)mem[7] << 0;
+      r               = (u64)mem[0] << 56 | (u64)mem[1] << 48 | (u64)mem[2] << 40 | (u64)mem[3] << 32 | (u64)mem[4] << 24 | (u64)mem[5] << 16 | (u64)mem[6] << 8 | (u64)mem[7] << 0;
     }
 
-    fmt::println("<R{}> {:#016x} -> {:#016x}", sizeof(Width) * 8, _address, r);
+    spdlog::info("<R{}> {:#016x} -> {:#016x}", sizeof(Width) * 8, _address, r);
 
     return r;
   }
@@ -61,6 +61,6 @@ struct Bus {
       mem[7] = (value >> 0) & 0xff;
     }
 
-    fmt::println("<W{}> {:#016x} -> {:#016x}", sizeof(Width) * 8, _address, value);
+    spdlog::info("<W{}> {:#016x} -> {:#016x}", sizeof(Width) * 8, _address, value);
   }
 };

@@ -2,12 +2,12 @@
 
 #include "vmm.hpp"
 int sys_tty_write(PPE& ppe, uint32_t ch, const void* buf, uint32_t len, uint32_t* written) {
-  fmt::println("ch: {}", ch);
-  fmt::println("buf: {}", fmt::ptr(buf));
-  fmt::println("len: {}", len);
-  fmt::println("written: {}", fmt::ptr(written));
+  spdlog::info("ch: {}", ch);
+  spdlog::info("buf: {}", fmt::ptr(buf));
+  spdlog::info("len: {}", len);
+  spdlog::info("written: {}", fmt::ptr(written));
 
-  fmt::println("{}(ch={}, buf={}, len={}, written={})", __func__, ch, fmt::ptr(buf), len, fmt::ptr(written));
+  spdlog::info("{}(ch={}, buf={}, len={}, written={})", __func__, ch, fmt::ptr(buf), len, fmt::ptr(written));
 
   u64 phys_addr = vmm.virt_to_phys((u64)buf);
 
@@ -15,6 +15,7 @@ int sys_tty_write(PPE& ppe, uint32_t ch, const void* buf, uint32_t len, uint32_t
 
   u32* _written = (u32*)ppe.bus->memory.data() + vmm.virt_to_phys((u64)written);
 
+  spdlog::info("r: {}", ptr);
   *_written = len;
   ppe.logs += ptr;
 

@@ -5,38 +5,35 @@
 #include "common.hpp"
 
 phys_page VMM::get_page_number(u64 virt_addr) {
-  // u16 page_offset      = virt_addr & 0xFFFF;
   vmm_logger->debug("[gpn] addrof: {:#016x}", (u64)std::addressof(first_level_table));
   vmm_logger->debug("passed in virt_addr: {:#016x}", virt_addr);
-  u16 first_level_idx            = (virt_addr >> 48) & 0xFFFF;  // index used in the 1st-level table to see if it points to a 2nd-level page table base
-  u16 second_level_idx           = (virt_addr >> 32) & 0xFFFF;  // index used in the 2nd-level table to see if it points to a 3rd-level page table base
-  u16 inner_page_table_entry_idx = (virt_addr >> 16) & 0xFFFF;  // index used in the 3rd-level table to see if it points to a physical page number
+  u16 first_level_idx            = (virt_addr >> 48) & 0xFFFF;
+  u16 second_level_idx           = (virt_addr >> 32) & 0xFFFF;
+  u16 inner_page_table_entry_idx = (virt_addr >> 16) & 0xFFFF;
 
   vmm_logger->info("[gpn] first level entry idx: {:#016x}", first_level_idx);
   vmm_logger->info("[gpn] second_level level entry idx: {:#016x}", second_level_idx);
   vmm_logger->info("[gpn] inner_page_table_entry_idx: {:#016x}", inner_page_table_entry_idx);
   // vmm_logger->info("page offset: {:#010x}", page_offset);
 
-  auto ptr_to_second_level_base_exists = first_level_table.contains(first_level_idx);  // 0x(FFFF)FFFFFFFF[FFFF]
+  auto ptr_to_second_level_base_exists = first_level_table.contains(first_level_idx);
   if (!ptr_to_second_level_base_exists) {
     vmm_logger->info("1st-level root does not have entry to 2nd-level inner ({})", first_level_idx);
     return UNMAPPED_PAGE;
   }
   auto _second_level_table = first_level_table.at(first_level_idx);
 
-  auto ptr_to_second_level_page_table_exists = _second_level_table->contains(second_level_idx);  // 0xFFFF(FFFF)FFFF[FFFF]
+  auto ptr_to_second_level_page_table_exists = _second_level_table->contains(second_level_idx);
   if (!ptr_to_second_level_page_table_exists) {
     vmm_logger->info("[gpn] 2nd-level inner {} does not have entry to 3rd-level leaf ({})", first_level_idx, second_level_idx);
     return UNMAPPED_PAGE;
   };
-  // vmm_logger->info("HEREE?");
   auto inner_page_table = _second_level_table->at(second_level_idx);
 
-  // vmm_logger->info("THERE???");
-  auto is_mapped = inner_page_table->contains(inner_page_table_entry_idx);  // 0xFFFFFFFF(FFFF)[FFFF]
+  auto is_mapped = inner_page_table->contains(inner_page_table_entry_idx);
 
   if (!is_mapped) {
-    FATAL("page not mapped");
+    FATAL(fmt::format("page not mapped addr: {:#016x}", virt_addr));
     return UNMAPPED_PAGE;
   };
 
@@ -57,25 +54,23 @@ phys_page VMM::get_next_free_page() {
 
   FATAL("ran out of physical pages");
 
-  // assert(0 && )
   return -1;
 };
 phys_page VMM::walk_and_create(u64 virt_addr) {
   // u16 page_offset                = virt_addr & 0xFFFF;
   vmm_logger->info("addrof: {:#016x}", (u64)std::addressof(first_level_table));
 
-  u16 first_level_idx            = (virt_addr >> 48) & 0xFFFF;  // index used in the 1st-level table to see if it points to a 2nd-level page table base
-  u16 second_level_idx           = (virt_addr >> 32) & 0xFFFF;  // index used in the 2nd-level table to see if it points to a 3rd-level page table base
-  u16 inner_page_table_entry_idx = (virt_addr >> 16) & 0xFFFF;  // index used in the 3rd-level table to see if it points to a physical page number
+  u16 first_level_idx            = (virt_addr >> 48) & 0xFFFF;
+  u16 second_level_idx           = (virt_addr >> 32) & 0xFFFF;
+  u16 inner_page_table_entry_idx = (virt_addr >> 16) & 0xFFFF;
 
   vmm_logger->info("first level entry idx: {:#010x}", first_level_idx);
   vmm_logger->info("second_level level entry idx: {:#010x}", second_level_idx);
   vmm_logger->info("third_level level entry idx: {:#010x}", inner_page_table_entry_idx);
-  // vmm_logger->info("page offset: {:#010x}", page_offset);
 
   vmm_logger->info("sizeof: {}", first_level_table.size());
 
-  auto ptr_to_second_level_table_exists = first_level_table.contains(first_level_idx);  // 0x(FFFF)FFFFFFFF[FFFF]
+  auto ptr_to_second_level_table_exists = first_level_table.contains(first_level_idx);
   if (!ptr_to_second_level_table_exists) {
     auto slt = new SecondLevelTable{};
     first_level_table.insert({first_level_idx, slt});
@@ -85,19 +80,12 @@ phys_page VMM::walk_and_create(u64 virt_addr) {
   }
   auto second_level_table = first_level_table.at(first_level_idx);
 
-  // vmm_logger->info("GOOD! second_level_table size: {}", second_level_table->size());
-  // vmm_logger->info("second_level_idx: {:#010x}", second_level_idx);
-
   auto ptr_to_second_level_page_table_exists = second_level_table->contains(second_level_idx);  // 0xFFFF(FFFF)FFFF[FFFF]
   if (!ptr_to_second_level_page_table_exists) {
     auto tlt = new ThirdLevelTable{};
-    // vmm_logger->info("2222lvlidx: {:#016x}", second_level_idx);
     second_level_table->insert({second_level_idx, tlt});
     vmm_logger->info("2nd-level inner {} does not have entry to inner page table ({}) -- creating", second_level_idx, inner_page_table_entry_idx);
-    // return UNMAPPED_PAGE;
   };
-
-  // auto inner_page_table = second_level_table->at(second_level_idx);
 
   vmm_logger->info("wac: {}", first_level_table.size());
   vmm_logger->info("walked and created");
@@ -115,11 +103,14 @@ u64 VMM::virt_to_phys(u64 virt_addr) {
   return phys_addr;
 }
 
-std::optional<VmMapping> VMM::map(u64 paddr, u64 size) {
-  VmMapping mapping{};
-  size_t diff = (paddr % PPC64_PAGE_SIZE);
+std::optional<VmMapping> VMM::map(u64 vaddr, u64 size, u64 prot_flags) {
+  // TODO: implement memory protections
+  (void)prot_flags;
 
-  mapping.virt_addr_start = paddr - diff;
+  VmMapping mapping{};
+  size_t diff = (vaddr % PPC64_PAGE_SIZE);
+
+  mapping.virt_addr_start = vaddr - diff;
 
   vmm_logger->info("normalized address: {:#010x}", mapping.virt_addr_start);
 

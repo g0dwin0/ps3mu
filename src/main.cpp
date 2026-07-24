@@ -24,20 +24,29 @@ int main(int argc, char** argv) {
   auto executableInfo  = parse_exec(file);
 
   load_self(file, executableInfo, instance.bus.memory);
-
-  if (!vmm.map(0xFFFFFFFFFFF00000, 0x100000)) {
+  auto stack_mapping = vmm.map(0x00000000fff00000, PPC64_PAGE_SIZE * 0xF);
+  if (!stack_mapping) {
     FATAL("failed to allocate stack");
   }
-  fmt::println("mapped stack");
+  stack_mapping->print();
+
+  spdlog::info("mapped stack");
 
   u64 entry_point = instance.cell_be.ppe.fetch(executableInfo.elf_header.e_entry);
   u32 toc         = instance.cell_be.ppe.fetch(executableInfo.elf_header.e_entry + 4);
 
-  fmt::println("e_entry: {:#016x} toc: {:#016x}", entry_point, toc);
-  instance.cell_be.ppe.set_reg(2, toc);
+  spdlog::info("e_entry: {:#016x} toc: {:#016x}", entry_point, toc);
+  instance.cell_be.ppe.set_gpr(1, 0x000000fffe0000);
+  instance.cell_be.ppe.set_gpr(2, toc);
+  instance.cell_be.ppe.set_gpr(3, 0);
+  instance.cell_be.ppe.set_gpr(4, 0x000000fffb0000);
+  instance.cell_be.ppe.set_gpr(5, 0x000000fffb0000);
 
-  instance.cell_be.ppe.nia = entry_point;
-  instance.cell_be.ppe.cia = entry_point;
+
+  // instance.cell_be.ppe.nia = entry_point;
+  // instance.cell_be.ppe.cia = entry_point;
+  instance.cell_be.ppe.nia = 0x10000;
+  instance.cell_be.ppe.cia = 0x10000;
 
   Frontend f{&instance};
 

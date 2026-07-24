@@ -1,2 +1,2 @@
 #pragma
-#define SOFTWARE_VERSION "6f23515-dirty"
+#define SOFTWARE_VERSION "80b1344-dirty"

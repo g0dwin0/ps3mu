@@ -6,4 +6,4 @@
 namespace fs = std::filesystem;
 
 template <typename T>
-concept AccessWidth = std::same_as<T, u8> || std::same_as<T, u16> || std::same_as<T, u32> || std::same_as<T, u64>;
+concept AccessWidth = std::same_as<T, u8> || std::same_as<T, u16> || std::same_as<T, u32> || std::same_as<T, u64> || std::same_as<T, i64> || std::same_as<T, i32>;

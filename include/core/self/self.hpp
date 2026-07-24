@@ -128,7 +128,7 @@ struct elf_header_t {
   u16 e_shentsize;
   u16 e_shnum;
   u16 e_shstrndx;
-} __attribute__((packed));
+} ;
 
 struct program_identification_header {
   u64 program_authority_id;
@@ -136,7 +136,7 @@ struct program_identification_header {
   u32 program_type;
   u64 program_sceversion;
   u64 padding;
-} __attribute__((packed));
+};
 
 struct ext_hdr_t {
   u64 ext_hdr_version;
@@ -149,7 +149,7 @@ struct ext_hdr_t {
   u64 supplemental_hdr_offset;
   u64 supplemental_hdr_size;
   u64 padding;
-} __attribute__((packed));
+};
 
 struct cf_header_t {
   uint32_t magic;
@@ -160,7 +160,7 @@ struct cf_header_t {
   // offset to start encapsulated data -- after SELF header
   uint64_t file_offset;
   uint64_t file_size;
-} __attribute__((packed));
+} ;
 
 struct Elf64_Phdr {
   Elf64_Word p_type;
@@ -171,7 +171,7 @@ struct Elf64_Phdr {
   Elf64_Xword p_filesz;
   Elf64_Xword p_memsz;
   Elf64_Xword p_align;
-} __attribute__((packed));
+};
 
 typedef struct {
   uint32_t sh_name;
@@ -184,7 +184,7 @@ typedef struct {
   uint32_t sh_info;
   uint64_t sh_addralign;
   uint64_t sh_entsize;
-} __attribute__((packed)) ELF_SHDR;
+} ELF_SHDR;
 
 using RawExecutableData = std::vector<u8>;
 
@@ -273,13 +273,13 @@ struct PRXParam {
   BE<u32> pad2;
 
   void print() {
-    fmt::println("magic: {:#016x}", magic);
-    fmt::println("version: {:#016x}", version);
-    fmt::println("libentstart: {:#016x}", libentstart);
-    fmt::println("libentend: {:#016x}", libentend);
-    fmt::println("libstubstart: {:#016x}", libstubstart);
-    fmt::println("libstubend: {:#016x}", libstubend);
-    fmt::println("ver: {:#016x}", ver);
+    spdlog::info("magic: {:#016x}", magic);
+    spdlog::info("version: {:#016x}", version);
+    spdlog::info("libentstart: {:#016x}", libentstart);
+    spdlog::info("libentend: {:#016x}", libentend);
+    spdlog::info("libstubstart: {:#016x}", libstubstart);
+    spdlog::info("libstubend: {:#016x}", libstubend);
+    spdlog::info("ver: {:#016x}", ver);
   }
 };
 
@@ -291,6 +291,7 @@ struct sceKernelLibraryStubTable {  // size is 0xC
   BE<u16> nvar;
   BE<u16> ntls;
 };
+
 
 struct sceKernelLibraryEntry {
   BE<u16> size;

@@ -25,7 +25,7 @@ inline std::vector<u8> read_file(const std::string filename) {
   std::ifstream file(filename.data(), std::ios::binary);
 
   if (!file.good()) {
-    fmt::println("failed to load file: {}", filename);
+    spdlog::info("failed to load file: {}", filename);
     // assert(0 & "failed to load file");
     assert(0);
   }
@@ -109,22 +109,20 @@ struct fmt::formatter<BE<T>> : fmt::formatter<T> {
 };
 
 inline u64 MASK(u8 x, u8 y) {
-  fmt::println("X: {}", x);
-  fmt::println("X: {}", x);
+  spdlog::info("X: {}", x);
+  spdlog::info("X: {}", x);
   
   assert(x <= y);
   u64 mask = 0;
 
   for (size_t idx = x; idx <= y; idx++) {
     mask |= (1ULL << idx);
-    // fmt::println("MASK: {:#066b}", mask);
-    // fmt::println("MASK: {}", mask);
   }
   return mask;
 }
 
 inline u64 EXTS(const u64 msb, const u64 value) {
-  u64 masked_retval = value & (1ULL << msb) - 1;
+  u64 masked_retval = value & ((1ULL << msb) - 1);
   bool msb_set      = (value & (1ULL << msb)) != 0;
 
   if (msb_set) {

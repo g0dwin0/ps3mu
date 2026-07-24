@@ -5,6 +5,7 @@
 
 #include "common.hpp"
 #include "common/literals.hpp"
+#include "spdlog/common.h"
 #include "spdlog/sinks/stdout_color_sinks.h"
 
 using phys_page                      = u64;
@@ -17,7 +18,6 @@ enum page_status : bool {
   IN_USE    = true,
   AVAILABLE = false,
 };
-// 0x(FFFF)(FFFF)(FFFF)[FFFF]
 
 struct VmMapping {
   u64 virt_addr_start;
@@ -25,9 +25,10 @@ struct VmMapping {
   std::vector<phys_page> page_numbers;
 
   void print() {
-    fmt::println("virt_addr_start: {:#016x}", virt_addr_start);
-    fmt::println("length: {:#016x}", length);
-    fmt::println("page_numbers: {}", fmt::join(page_numbers, ","));
+    spdlog::info("virt_addr_start: {:#016x}", virt_addr_start);
+    spdlog::info("length: {:#016x}", length);
+    spdlog::info("page_numbers: {}", fmt::join(page_numbers, ","));
+    spdlog::info("range: {:#016x} - {:#016x}", virt_addr_start, virt_addr_start + length);
   }
 };
 
@@ -38,25 +39,22 @@ struct VMM {
     page_size = page_sz;
     vmm_logger->set_pattern("vmm: %v");
     vmm_logger->set_level(spdlog::level::off);
-    // vmm_logger->info("hello from VMM :-)");
   };
 
-  
   using ThirdLevelTable  = std::unordered_map<u16, u16>;
   using SecondLevelTable = std::unordered_map<u16, ThirdLevelTable*>;
 
   std::array<page_in_use, 4_GiB / PPC64_PAGE_SIZE> all_pages{};
-  
+
   u32 page_size{};
-  std::shared_ptr<spdlog::logger> vmm_logger = spdlog::stdout_color_mt("VMM");  
+  std::shared_ptr<spdlog::logger> vmm_logger = spdlog::stdout_color_mt("VMM");
   std::unordered_map<u16, SecondLevelTable*> first_level_table;  // holds pointers to the bases of a 2nd-level page tables, indexed into using first level
   std::unordered_map<u16, ThirdLevelTable*> second_level_table;  // holds pointers to the bases of a 3rd-level page tables, indexed into second level
   std::unordered_map<virt_page, phys_page> page_table{};
   std::vector<VmMapping> mappings;
 
-
   phys_page walk_and_create(u64 virt_addr);
-  std::optional<VmMapping> map(u64 vaddr, u64 size);
+  std::optional<VmMapping> map(u64 vaddr, u64 size, u64 prot_flags = 0);
   phys_page get_page_number(u64 virt_addr);
   phys_page get_next_free_page();
   u64 virt_to_phys(u64 virt_addr);
@@ -64,3 +62,13 @@ struct VMM {
 };
 
 inline VMM vmm{PPC64_PAGE_SIZE};
+
+template <typename GuestPtrType>
+struct GuestPtr {
+  GuestPtr() = delete;
+  GuestPtr(void* ptr) : data(ptr) {
+    if (!ptr) FATAL();
+  }
+
+  GuestPtrType* data = nullptr;
+};
